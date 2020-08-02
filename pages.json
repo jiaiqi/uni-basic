@@ -1,46 +1,45 @@
 {
 	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
-		    "path" : "pages/login/login",
-		    "style" : {}
+			"path": "pages/public/normal/list/list",
+			"style": {}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
 		},
 		{
 			"path": "pages/index/index",
 			"style": {
 				"navigationBarTitleText": "uni-app"
 			}
+		}, {
+			"path": "pages/public/proc/list/list",
+			"style": {}
+		}, {
+			"path": "pages/public/proc/form/form",
+			"style": {}
+		}, 
+		{
+			"path": "pages/public/normal/form/form",
+			"style": {}
+		}, {
+			"path": "pages/public/normal/detail/detail",
+			"style": {}
+		}, {
+			"path": "pages/public/proc/detail/detail",
+			"style": {}
 		}
-		
-        ,{
-            "path" : "pages/public/proc/list/list",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/public/proc/form/form",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/public/normal/list/list",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/public/normal/form/form",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/public/normal/detail/detail",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/public/proc/detail/detail",
-            "style" : {}
-        }
-        
-    ],
+	],
 	"globalStyle": {
-		"navigationBarTextStyle": "black",
+		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
+		"navigationBarBackgroundColor": "#1abc9c",
 		"backgroundColor": "#F8F8F8"
+	},
+	"easycom": {
+		"^u-(.*)": "@/uview-ui/components/u-$1/u-$1.vue"
 	}
 }

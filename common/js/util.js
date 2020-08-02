@@ -49,19 +49,78 @@ const install = (Vue, options) => {
 
 	// 小程序、公众号静默登录
 	Vue.prototype.verifyLogin = async (code) => {
-		let res = await api.verifyLogin(code)
-		debugger
-		let resData = res;
-		let loginMsg = {
-			bx_auth_ticket: resData.bx_auth_ticket,
-			expire_time: resData.expire_time
-		};
-		let expire_timestamp = parseInt(new Date().getTime() / 1000) + loginMsg.expire_time; //过期时间的时间戳(秒)
-		uni.setStorageSync('bx_auth_ticket', resData.bx_auth_ticket);
-		uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
-		uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
-		uni.setStorageSync('isLogin',true)
-	}
+			let res = await api.verifyLogin(code)
+			debugger
+			let resData = res;
+			let loginMsg = {
+				bx_auth_ticket: resData.bx_auth_ticket,
+				expire_time: resData.expire_time
+			};
+			let expire_timestamp = parseInt(new Date().getTime() / 1000) + loginMsg.expire_time; //过期时间的时间戳(秒)
+			uni.setStorageSync('bx_auth_ticket', resData.bx_auth_ticket);
+			uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
+			uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
+			uni.setStorageSync('isLogin', true)
+		},
+		// 查找数据库中保存的微信用户信息，如果没有,则保存该微信用户的用户信息到服务器
+		Vue.prototype.getWxUserInfo = async function(userInfo) {
+				//查找微信用户头像昵称
+				let optionType = 'select';
+				let srv = 'srvwx_basic_user_info_select';
+				let app = 'wx';
+				let req = {
+					serviceName: 'srvwx_basic_user_info_select',
+					colNames: ['*'],
+					condition: [{
+						colName: 'app_no',
+						ruleType: 'eq',
+						value: uni.getStorageSync('_appNo') ? uni.getStorageSync('_appNo') : Vue.prototype.$config.appNo.wxmp
+					}]
+				};
+				let res = await Vue.prototype.onRequest(optionType, srv, req, app);
+				if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
+					let wxUser = res.data.data[0];
+					uni.setStorageSync('backWxUserInfo', wxUser);
+					if (!wxUser.nickname) {
+						if (userInfo) {
+							Vue.prototype.setWxUserInfo(userInfo)
+						}
+					}
+				} else if (userInfo) {
+					Vue.prototype.setWxUserInfo(userInfo)
+				}
+			},
+			Vue.prototype.setWxUserInfo = async function(e) {
+				try{
+					let userInfo = typeof e==='string'? JSON.parse(e):e
+				}catch(err){
+					//TODO handle the exception
+					console.log(err)
+				}
+				console.log("setWxUserInfo", userInfo)
+				let url = Vue.prototype.getServiceUrl('wx', 'srvwx_basic_user_info_save', 'operate')
+				let req = [{
+					"serviceName": "srvwx_basic_user_info_save",
+					"data": [{
+							"app_no": Vue.prototype.$config.appNo.wxmp,
+							"nickname": userInfo.nickname,
+							"sex": userInfo.sex,
+							"country": userInfo.country,
+							"province": userInfo.province,
+							"city": userInfo.city,
+							"headimgurl": userInfo.headimgurl
+						}
+
+					],
+				}]
+				if (e) {
+					let response = await this.$http.post(url, req);
+					console.log('srvfile_attachment_select', response);
+					if (response.data.state === 'SUCCESS' && response.data.data.length > 0) {
+						return response.data.data
+					}
+				}
+			}
 }
 
 export default install

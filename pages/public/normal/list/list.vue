@@ -1,6 +1,6 @@
 <template>
 	<view>
-		
+		<bx-list class="bx-list"></bx-list>
 	</view>
 </template>
 
@@ -17,6 +17,9 @@
 	}
 </script>
 
-<style>
-
+<style lang="scss">
+.bx-list{
+	height: 500px;
+	overflow: hidden;
+}
 </style>
