@@ -1,8 +1,8 @@
 import http from './http.js'
 const config = {
 	host: {
-		// backUrl: "https://srvms.100xsys.cn", //后端接口地址
-		backUrl: "http://124.47.10.210:18103", //后端接口地址
+		backUrl: "https://srvms.100xsys.cn", //后端接口地址
+		// backUrl: "http://124.47.10.210:18103", //后端接口地址
 		frontUrl: "", // 前端服务器url(公众号、h5网页等)
 		test: "", //测试借口接口
 	},
@@ -11,7 +11,6 @@ const config = {
 	appName: "daq", //默认服务app
 	activeApp: "daq", //当前服务app
 	singleApp: true, //是否单app项目
-
 	homePath: "", //登录后默认要跳转到的页面
 	appID: {
 		// wxmp: 'wx8e6f993081f6e979',// 百想助理
@@ -53,6 +52,8 @@ const api = {
 			if(Array.isArray(res.data.response)&&res.data.response.length>0){
 				return res.data.response[0]
 			}
+		}else{
+			return res.data
 		}
 	}
 

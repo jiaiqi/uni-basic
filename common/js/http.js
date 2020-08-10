@@ -20,7 +20,7 @@ fly.interceptors.request.use((request) => {
 			request.headers["bx_auth_ticket"] = bxAuthTicket
 		}
 	}
-
+	
 	const outTime = uni.getStorageSync("expire_timestamp") //过期时间
 	const date = parseInt(new Date().getTime() / 1000)
 	if (outTime) {
@@ -68,7 +68,7 @@ fly.interceptors.response.use(
 			} else {
 				// 确认未登录时再进行自动跳转到登录页面
 				if (res.request.headers.requrl) {
-					console.log('请求失败::', res.request.headers.requrl)
+					console.log('请求失败:', res.request.headers.requrl)
 					// uni.setStorageSync('backUrl',res.request.headers.requrl)
 					let requestUrl = decodeURIComponent(res.request.headers.requrl)
 					if (res.request.headers.requrl && res.request.headers.requrl !== '/' && res.request.headers.requrl.indexOf("code") ===
@@ -76,19 +76,25 @@ fly.interceptors.response.use(
 						//  过滤无效的url
 						uni.setStorageSync("backUrl", requestUrl)
 					}
-
+					
 					try {
 						console.log("backUrl:", requestUrl, encodeURIComponent(requestUrl))
+						// uni.redirectTo({
+						// 	url: '/pages/public/accountExec/accountExec'
+						// })
 						uni.redirectTo({
-							url: '/pages/public/accountExec/accountExec'
+							url: '/pages/login/login'
 						})
 					} catch (e) {
 						console.error('请求失败', e)
 						//TODO handle the exception
 					}
 				} else {
+					// uni.redirectTo({
+					// 	url: '/pages/public/accountExec/accountExec'
+					// })
 					uni.redirectTo({
-						url: '/pages/public/accountExec/accountExec'
+						url: '/pages/login/login'
 					})
 				}
 			}

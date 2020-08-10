@@ -8,19 +8,6 @@ const install = (Vue, options) => {
 	Vue.prototype.$http = fly
 	Vue.prototype.$config = config
 	Vue.prototype.$api = api
-	Vue.prototype.onRequest = async function(optionType, srv, req, app) {
-		let self = this
-		let reqType = optionType
-		if (optionType === "add" || optionType === "update") {
-			reqType = optionType
-		} else if (optionType === "select") {
-
-		}
-
-		let url = Vue.prototype.getServiceUrl(app || uni.getStorageSync("activeApp"), srv, optionType)
-		return self.$http.post(url, req)
-	}
-
 	/**
 	 * @param {String} app 
 	 * @param {String} srv - 服务名(serviceName)
@@ -30,7 +17,6 @@ const install = (Vue, options) => {
 	Vue.prototype.getServiceUrl = function(app, srv, srvType, url) {
 		// 获取转换URL app, srv, srvType, url
 		let singleApp = this.$api.singleApp
-
 		let urlVal = url || this.$api.srvHost
 		let appVal = app
 		if (singleApp) {
@@ -50,7 +36,6 @@ const install = (Vue, options) => {
 	// 小程序、公众号静默登录
 	Vue.prototype.verifyLogin = async (code) => {
 			let res = await api.verifyLogin(code)
-			debugger
 			let resData = res;
 			let loginMsg = {
 				bx_auth_ticket: resData.bx_auth_ticket,
@@ -91,9 +76,9 @@ const install = (Vue, options) => {
 				}
 			},
 			Vue.prototype.setWxUserInfo = async function(e) {
-				try{
-					let userInfo = typeof e==='string'? JSON.parse(e):e
-				}catch(err){
+				try {
+					let userInfo = typeof e === 'string' ? JSON.parse(e) : e
+				} catch (err) {
 					//TODO handle the exception
 					console.log(err)
 				}
@@ -102,16 +87,14 @@ const install = (Vue, options) => {
 				let req = [{
 					"serviceName": "srvwx_basic_user_info_save",
 					"data": [{
-							"app_no": Vue.prototype.$config.appNo.wxmp,
-							"nickname": userInfo.nickname,
-							"sex": userInfo.sex,
-							"country": userInfo.country,
-							"province": userInfo.province,
-							"city": userInfo.city,
-							"headimgurl": userInfo.headimgurl
-						}
-
-					],
+						"app_no": Vue.prototype.$config.appNo.wxmp,
+						"nickname": userInfo.nickname,
+						"sex": userInfo.sex,
+						"country": userInfo.country,
+						"province": userInfo.province,
+						"city": userInfo.city,
+						"headimgurl": userInfo.headimgurl
+					}],
 				}]
 				if (e) {
 					let response = await this.$http.post(url, req);

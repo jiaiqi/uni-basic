@@ -3,7 +3,7 @@
 		<view class="login-main">
 			<view class="login-logo">
 				<image src="../../static/img/sun.png" mode=""></image>
-			<!-- 	<view class="logo-tip">
+				<!-- 	<view class="logo-tip">
 					人们从诗人的字句里,选取自己心爱的意义
 				</view> -->
 			</view>
@@ -14,7 +14,7 @@
 			<view class="login-list flex border-all">
 				<view class="cuIcon-lock  flex"></view>
 				<view class="login-input">
-					<input  autocomplete="off" type="password" maxlength="16" placeholder="请输入密码" class="is-input1 " v-model="user.pwd" @confirm="accountLogin(user)" />
+					<input autocomplete="off" type="password" maxlength="16" placeholder="请输入密码" class="is-input1 " v-model="user.pwd" @confirm="accountLogin(user)" />
 				</view>
 			</view>
 			<!-- <button class="cu-btn login-btn" @tap="doLogin">登 录/注 册</button> -->
@@ -25,7 +25,9 @@
 			</view>
 		</view>
 		<view class="login-footer">
+			<!-- #ifdef MP-WEIXIN -->
 			<view class="footer-tip flex">其他登录方式</view>
+			<!-- #endif -->
 			<view class="footer-other flex">
 				<view class="other-list">
 					<!-- #ifdef MP-WEIXIN -->
@@ -33,7 +35,7 @@
 					<!-- #endif -->
 					<!-- <button class="confirm-btn bg-grey" type="default" @tap="navBack" :disabled="false"></button> -->
 					<!-- #ifdef H5 -->
-					<view class="image"><image src="../../static/img/wechat.png" mode="aspectFill" @tap="login_weixin()"></image></view>
+					<!-- <view class="image" id="login_container"><image src="../../static/img/wechat.png" mode="aspectFill" @tap="login_weixin()"></image></view> -->
 					<!-- #endif -->
 					<!-- <view class="image"><image src="../../static/img/back.png" mode="aspectFill" @tap="login_weixin()"></image></view> -->
 				</view>
@@ -61,7 +63,7 @@ export default {
 			console.log(e);
 			if (e.type === 'getuserinfo' && e.detail.errMsg === 'getUserInfo:ok') {
 				let userInfo = e.detail.userInfo;
-				uni.setStorageSync('wxuserinfo',userInfo)
+				uni.setStorageSync('wxuserinfo', userInfo);
 			}
 			this.wechatLogin();
 		},
@@ -69,11 +71,11 @@ export default {
 			// 账号登录
 			uni.hideKeyboard(); //隐藏软键盘
 			console.log('srvuser_login', user);
-			if(Object.values(user).length<2){
+			if (Object.values(user).length < 2) {
 				uni.showToast({
-					title:'请检查账号密码是否正确输入',
-					icon:'none'
-				})
+					title: '请检查账号密码是否正确输入',
+					icon: 'none'
+				});
 			}
 			let url = this.getServiceUrl('sso', 'srvuser_login', 'operate');
 			let req = [
@@ -103,8 +105,8 @@ export default {
 				success(res) {
 					// session_key 未过期，并且在本生命周期一直有效
 					console.log('uni.checkSession', res);
-					let isLogin = uni.getStorageSync('isLogin')
-					if(!isLogin){
+					let isLogin = uni.getStorageSync('isLogin');
+					if (!isLogin) {
 						_this.uniLogin();
 					}
 				},
@@ -122,7 +124,7 @@ export default {
 				provider: 'weixin',
 				success: function(loginRes) {
 					console.log(loginRes);
-					_this.verifyLogin(loginRes.code)
+					_this.verifyLogin(loginRes.code);
 					_this.getUserInfo();
 				}
 			});
@@ -165,8 +167,9 @@ export default {
 			});
 		},
 		//微信登录
-		login_weixin() {
+		async login_weixin() {
 			let _this = this;
+			// #ifdef MP
 			uni.login({
 				provider: 'weixin',
 				success: function(loginRes) {
@@ -179,6 +182,59 @@ export default {
 					});
 				}
 			});
+			// #endif
+			// #ifdef H5
+			let url = this.getServiceUrl('wx2', 'srvwx_web_scan_cfg_select', 'select');
+			
+			// srvwx_web_scan_cfg_select
+			!(function(a, b, c) {
+				function d(a) {
+					var c = 'default';
+					a.self_redirect === !0 ? (c = 'true') : a.self_redirect === !1 && (c = 'false');
+					var d = b.createElement('iframe'),
+						e =
+							'https://open.weixin.qq.com/connect/qrconnect?appid=' +
+							a.appid +
+							'&scope=' +
+							a.scope +
+							'&redirect_uri=' +
+							a.redirect_uri +
+							'&state=' +
+							a.state +
+							'&login_type=jssdk&self_redirect=' +
+							c +
+							'&styletype=' +
+							(a.styletype || '') +
+							'&sizetype=' +
+							(a.sizetype || '') +
+							'&bgcolor=' +
+							(a.bgcolor || '') +
+							'&rst=' +
+							(a.rst || '');
+					(e += a.style ? '&style=' + a.style : ''),
+						(e += a.href ? '&href=' + a.href : ''),
+						(d.src = e),
+						(d.frameBorder = '0'),
+						(d.allowTransparency = 'true'),
+						(d.scrolling = 'no'),
+						(d.width = '300px'),
+						(d.height = '400px');
+					var f = b.getElementById(a.id);
+					(f.innerHTML = ''), f.appendChild(d);
+				}
+				a.WxLogin = d;
+			})(window, document);
+			var obj = new WxLogin({
+				self_redirect: false,
+				id: 'login_container',
+				appid: 'wxd016be5549cfc967',
+				scope: 'snsapi_login',
+				redirect_uri: '/pages/login/login',
+				state: 'success',
+				style: 'black',
+				href: window.location.origin + '/main/css/loginqrcode.css'
+			});
+			// #endif
 		},
 		//授权登录
 		other_login(loginRes, infoRes, type) {
@@ -239,7 +295,7 @@ export default {
 page {
 	background-color: #ffffff;
 }
-.color-normal{
+.color-normal {
 	color: #1abc9c;
 }
 .flex {
@@ -405,6 +461,6 @@ page {
 	}
 }
 input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0px 1000px white inset;
-} 
+	-webkit-box-shadow: 0 0 0px 1000px white inset;
+}
 </style>
