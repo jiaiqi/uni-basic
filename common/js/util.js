@@ -33,8 +33,8 @@ const install = (Vue, options) => {
 		return urlVal + '/' + appVal + '/' + srvTypeVal + '/' + srvVal
 	}
 
-	// 小程序、公众号静默登录
-	Vue.prototype.verifyLogin = async (code) => {
+	Vue.prototype.verifyLogin = async function(code) {
+			// 小程序、公众号静默登录
 			let res = await api.verifyLogin(code)
 			let resData = res;
 			let loginMsg = {
@@ -46,6 +46,7 @@ const install = (Vue, options) => {
 			uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
 			uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
 			uni.setStorageSync('isLogin', true)
+			return resData
 		},
 		// 查找数据库中保存的微信用户信息，如果没有,则保存该微信用户的用户信息到服务器
 		Vue.prototype.getWxUserInfo = async function(userInfo) {
@@ -75,6 +76,7 @@ const install = (Vue, options) => {
 					Vue.prototype.setWxUserInfo(userInfo)
 				}
 			},
+			// 保存微信用户信息
 			Vue.prototype.setWxUserInfo = async function(e) {
 				try {
 					let userInfo = typeof e === 'string' ? JSON.parse(e) : e

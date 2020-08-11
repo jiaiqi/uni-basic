@@ -55,7 +55,7 @@ export default {
 		};
 	},
 	onLoad() {
-		// this.checkGuide();
+		
 	},
 	methods: {
 		loginAndAuth(e) {
@@ -90,11 +90,12 @@ export default {
 				if (Array.isArray(res.data.response) && res.data.response.length > 0) {
 					let response = res.data.response[0].response;
 					console.log(response);
-					debugger;
 					uni.setStorageSync('bx_auth_ticket', response.bx_auth_ticket);
 					uni.setStorageSync('expire_time', response.expire_time);
 					uni.setStorageSync('login_user_info', response.login_user_info);
-					return response;
+					uni.navigateBack();
+					uni.$emit('loginData', response);
+					// return response;
 				}
 			}
 		},
@@ -124,8 +125,15 @@ export default {
 				provider: 'weixin',
 				success: function(loginRes) {
 					console.log(loginRes);
-					_this.verifyLogin(loginRes.code);
-					_this.getUserInfo();
+					_this.verifyLogin(loginRes.code).then(res => {
+						console.log(res, 'login-res');
+						uni.showToast({
+							title: '登录成功',
+							icon: 'success'
+						});
+						uni.navigateBack();
+						_this.getUserInfo();
+					});
 				}
 			});
 		},
@@ -183,58 +191,8 @@ export default {
 				}
 			});
 			// #endif
-			// #ifdef H5
 			let url = this.getServiceUrl('wx2', 'srvwx_web_scan_cfg_select', 'select');
-			
 			// srvwx_web_scan_cfg_select
-			!(function(a, b, c) {
-				function d(a) {
-					var c = 'default';
-					a.self_redirect === !0 ? (c = 'true') : a.self_redirect === !1 && (c = 'false');
-					var d = b.createElement('iframe'),
-						e =
-							'https://open.weixin.qq.com/connect/qrconnect?appid=' +
-							a.appid +
-							'&scope=' +
-							a.scope +
-							'&redirect_uri=' +
-							a.redirect_uri +
-							'&state=' +
-							a.state +
-							'&login_type=jssdk&self_redirect=' +
-							c +
-							'&styletype=' +
-							(a.styletype || '') +
-							'&sizetype=' +
-							(a.sizetype || '') +
-							'&bgcolor=' +
-							(a.bgcolor || '') +
-							'&rst=' +
-							(a.rst || '');
-					(e += a.style ? '&style=' + a.style : ''),
-						(e += a.href ? '&href=' + a.href : ''),
-						(d.src = e),
-						(d.frameBorder = '0'),
-						(d.allowTransparency = 'true'),
-						(d.scrolling = 'no'),
-						(d.width = '300px'),
-						(d.height = '400px');
-					var f = b.getElementById(a.id);
-					(f.innerHTML = ''), f.appendChild(d);
-				}
-				a.WxLogin = d;
-			})(window, document);
-			var obj = new WxLogin({
-				self_redirect: false,
-				id: 'login_container',
-				appid: 'wxd016be5549cfc967',
-				scope: 'snsapi_login',
-				redirect_uri: '/pages/login/login',
-				state: 'success',
-				style: 'black',
-				href: window.location.origin + '/main/css/loginqrcode.css'
-			});
-			// #endif
 		},
 		//授权登录
 		other_login(loginRes, infoRes, type) {

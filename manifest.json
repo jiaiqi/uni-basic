@@ -84,6 +84,6 @@
                 "enable" : true
             }
         },
-        "template" : "template.html"
+        "template" : ""
     }
 }

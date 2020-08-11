@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import {config} from '@/common/js/config.js'
-import {formateDate} from '@/common/js/util.js'
+import formateDate from '@/common/js/function/formatDate.js'
 import flyio from '@/common/js/wx.js' // 引入flyio
 let fly = new flyio
 
@@ -8,6 +8,9 @@ let fly = new flyio
 fly.interceptors.request.use((request) => {
 	//给所有请求添加自定义header
 	// 如果是浏览器运行的记录 请求的页面path和参数
+	uni.showLoading({
+		mask: true
+	});
 	if (uni.getStorageSync('client_env') === 'wxh5' || uni.getStorageSync('client_env') === 'web') {
 		request.headers["requrl"] = window.location.pathname + window.location.search
 		console.log("requrl", window.location.pathname + window.location.search, window.location)
@@ -26,38 +29,30 @@ fly.interceptors.request.use((request) => {
 	if (outTime) {
 		const isExpired = outTime < date
 		console.log('登录是否过期:', isExpired, '\n过期时间:', formateDate(new Date(outTime * 1000)), 'YYYY', date)
-		if (isExpired) {
-			uni.setStorageSync('isLogin', false)
-			request.headers["USERlOGIN"] = "noneLogin" // normal || noneLogin
-			return request
+		// if (isExpired) {
+		// 	uni.setStorageSync('isLogin', false)
+		// 	request.headers["USERlOGIN"] = "noneLogin" // normal || noneLogin
+		// 	return request
 
-		} else {
-			request.headers["USERlOGIN"] = "normal" // normal || noneLogin
-			return request
-		}
+		// } else {
+		// 	request.headers["USERlOGIN"] = "normal" // normal || noneLogin
+		// 	return request
+		// }
 	} else {
 		request.USERlOGIN = "normal"
 		return request
 	}
-
-	//打印出请求体
-	// console.log(request.body)
-	//终止请求
-	//var err=new Error("xxx")
-	//err.request=request
-	//return Promise.reject(new Error(""))
-	//可以显式返回request, 也可以不返回，没有返回值时拦截器中默认返回request
-
 })
 
 //添加响应拦截器，响应拦截器会在then/catch处理之前执行
 fly.interceptors.response.use(
 	(res) => {
 		//只将请求结果的data字段返回
+		uni.hideLoading()
 		if (res.data.resultCode === "0011" || (res.request.headers.USERlOGIN && res.request.headers.USERlOGIN ===
 				"noneLogin")) { //未登录
 			uni.setStorageSync('isLogin', false)
-			uni.setStorageSync('stophttp', true)
+			// uni.setStorageSync('stophttp', true)
 			// uni.setStorageSync('backUrl',window.location.pathname + window.location.search)
 			// 后端返回 无效登录时，需要进行的跳转处理
 			if (uni.getStorageSync("isLogin")) {
@@ -79,9 +74,6 @@ fly.interceptors.response.use(
 					
 					try {
 						console.log("backUrl:", requestUrl, encodeURIComponent(requestUrl))
-						// uni.redirectTo({
-						// 	url: '/pages/public/accountExec/accountExec'
-						// })
 						uni.redirectTo({
 							url: '/pages/login/login'
 						})
@@ -90,9 +82,6 @@ fly.interceptors.response.use(
 						//TODO handle the exception
 					}
 				} else {
-					// uni.redirectTo({
-					// 	url: '/pages/public/accountExec/accountExec'
-					// })
 					uni.redirectTo({
 						url: '/pages/login/login'
 					})
@@ -106,7 +95,7 @@ fly.interceptors.response.use(
 				title: data.resultMessage
 			})
 		} else {
-			uni.setStorageSync('stophttp', false)
+			// uni.setStorageSync('stophttp', false)
 			// uni.removeStorageSync("backUrl")	
 		}
 		// return res.data
