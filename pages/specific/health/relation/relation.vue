@@ -22,7 +22,7 @@
 				</view>
 			</view>
 		</view>
-		<!-- <view class="description"><bx-relation-charts></bx-relation-charts></view> -->
+		<view class="description"><relationCharts></relationCharts></view>
 	</view>
 </template>
 

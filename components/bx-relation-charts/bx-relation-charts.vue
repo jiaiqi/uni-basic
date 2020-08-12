@@ -10,7 +10,8 @@
 </template>
 
 <script>
-import * as echarts from '@/components/echarts/echarts.min.js';
+import * as echarts from '@/components/echarts/echarts.min1.js';
+// import * as echarts from '@/components/echarts/echarts.min.js';
 import mpvueEcharts from '@/components/mpvue-echarts/src/echarts.vue';
 export default {
 	name: 'DietRecord',
