@@ -20,6 +20,9 @@ function formateDate(date, rule, separator) {
 		case 'YYYY-MM-DD':
 			result = `${o.YY}${sep}${o.MM}${sep}${o.DD}`
 			break;
+		case '年月日':
+			result = `${o.YY}年${o.MM}月${o.DD}日`
+			break;
 		case 'YYYY-MM-DD HH:mm:ss':
 			result = `${o.YY}${sep}${o.MM}${sep}${o.DD} ${o.HH}:${o.mm}:${o.ss}`
 			break;

@@ -1,6 +1,13 @@
 {
 	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
+			"path": "pages/specific/health/health",
+			"style": {
+				"navigationBarTitleText": "健康管理平台",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/public/home/home",
 			"style": {
 				"navigationBarTitleText": "首页"
@@ -19,12 +26,6 @@
 			"path": "pages/login/login",
 			"style": {
 				"navigationBarTitleText": "登录"
-			}
-		},
-		{
-			"path": "pages/index/index",
-			"style": {
-				"navigationBarTitleText": "uni-app"
 			}
 		}, {
 			"path": "pages/public/proc/list/list",
@@ -45,10 +46,20 @@
 		}, {
 			"path": "pages/public/accountExec/accountExec",
 			"style": {}
+		}, {
+			"path": "pages/specific/health/record/record",
+			"style": {
+				"navigationBarTitleText": "健康记录"
+			}
+		}, {
+			"path": "pages/specific/health/relation/relation",
+			"style": {
+				"navigationBarTitleText": "疾病详情"
+			}
 		}
-
 	],
 	"globalStyle": {
+		// "navigationStyle":"custom",
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-basic",
 		"navigationBarBackgroundColor": "#1abc9c",
