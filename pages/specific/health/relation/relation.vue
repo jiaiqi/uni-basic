@@ -2,6 +2,7 @@
 	<view class="health-relation">
 		<!-- 疾病与病症、病因关系 -->
 		<view class="relation">
+			<relationCharts class="relation-charts"></relationCharts>
 			<view class="illness-box content-box">
 				<view class="title">{{ illness.label }}</view>
 				<view class="illness content-item">{{ illness.name }}</view>
@@ -22,7 +23,6 @@
 				</view>
 			</view>
 		</view>
-		<view class="description"><relationCharts></relationCharts></view>
 	</view>
 </template>
 
@@ -34,12 +34,17 @@ export default {
 	},
 	data() {
 		return {
+			ill:[
+				{
+					label:"疾病",
+				}
+			],
 			illness: {
 				label: '疾病',
-				name: '感冒',
+				name: '高血压',
 				symptom: {
 					label: '病症',
-					list: ['流鼻涕', '发热', '头痛', '恶心', '食欲不振', '鼻塞']
+					list: ['头痛', '疲倦不安', '心律失常', '心悸', '耳鸣']
 				}, //症状
 				cause: {
 					label: '病因',

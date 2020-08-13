@@ -1,7 +1,7 @@
 <template>
 	<view class="chart-wrap">
 		<!-- #ifdef APP-PLUS || MP-WEIXIN -->
-		<mpvue-echarts class="ec-canvas" @onInit="onInit" canvasId="line" ref="normalChart" />
+		<mpvue-echarts class="ec-canvas" style="width: 100%;height:100%;" @onInit="onInit" canvasId="line" ref="normalChart" />
 		<!-- #endif -->
 		<!-- #ifdef H5 -->
 		<div :id="chartId" style="width: 100%;height:100%;"></div>
@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import * as echarts from '@/components/echarts/echarts.min1.js';
+import * as echarts from '@/components/echarts/echarts.min2.js';
 // import * as echarts from '@/components/echarts/echarts.min.js';
 import mpvueEcharts from '@/components/mpvue-echarts/src/echarts.vue';
 export default {
@@ -42,6 +42,97 @@ export default {
 	},
 	methods: {
 		initChart(e) {
+			var originalData = [
+				{
+					name: '高血压',
+					value: 0,
+					symbol: 'roundRect',
+					itemStyle: { color: '#f37b7b', borderColor: '#fff', borderWidth: 1 },
+					label:{color:"#fff"},
+					children: [
+						{
+							name: '肥胖',
+							symbol: 'roundRect',
+							value: 1,
+							children: [
+								{
+									symbol: 'roundRect',
+									name: '动脉血管舒张',
+									value: 1
+								},
+								{
+									symbol: 'roundRect',
+									name: '高血糖',
+									value: 1
+								}
+							]
+						},
+						{
+							name: '饮酒',
+							symbol: 'roundRect',
+							value: 1
+						},
+						{
+							name: '精神紧张',
+							symbol: 'roundRect',
+							value: 1
+						},
+						{
+							name: '运动不足',
+							symbol: 'roundRect',
+							symbolSize:60,
+							value: 1
+						},
+						{
+							name: '饮食不健康',
+							symbol: 'roundRect',
+							value: 1
+						}
+					]
+				}
+			];
+			var option = {
+				type: 'tree',
+				backgroundColor: '#fff',
+				series: [
+					{
+						type: 'tree',
+						hoverAnimation: true, //hover样式
+						data: originalData,
+						top: 80,
+						bottom: 80,
+						left: 0,
+						right: 0,
+						layout: 'orthogonal',
+						orient: 'TB',
+						symbol: 'circle',
+						symbolSize: 50,
+						nodePadding: 10,
+						animationDurationUpdate: 750,
+						expandAndCollapse: true, //子树折叠和展开的交互，默认打开
+						// initialTreeDepth: 2,
+						roam: 'scale', //是否开启鼠标缩放和平移漫游。scale/move/true
+						focusNodeAdjacency: true,
+						itemStyle: {
+							color: '#f1f1f1',
+							backgroundColor: '#f1f1f1',
+							borderColor: '#333',
+							borderWidth: 1
+						},
+						label: {
+							//标签样式
+							color: '#333',
+							fontSize: 14,
+							position: 'inside',
+							rotate: 0
+						},
+						lineStyle: {
+							width: 1,
+							curveness: 0.5
+						}
+					}
+				]
+			};
 			// #ifdef APP-PLUS||MP-WEIXIN
 			// 若在小程序或APP环境 使用官方版本mpvue-echarts
 			let { width, height } = e;
@@ -52,210 +143,30 @@ export default {
 				height: height
 			});
 			canvas.setChart(normalChart);
-			normalChart.setOption(this.chartOption);
+			normalChart.setOption(option);
 			this.$refs.normalChart.setChart(normalChart);
 			// #endif
 			// #ifdef H5
 			// 若在H5环境 使用官方版本echarts
 
-			let data = {
-				nodes: [
-					{
-						name: '操作系统集团',
-						category: 0
-					},
-					{
-						name: '浏览器有限公司',
-						category: 0
-					},
-					{
-						name: 'HTML科技',
-						category: 0
-					},
-					{
-						name: 'JavaScript科技',
-						category: 0
-					},
-					{
-						name: 'CSS科技',
-						category: 0
-					},
-					{
-						name: 'Chrome',
-						category: 1
-					},
-					{
-						name: 'IE',
-						category: 1
-					},
-					{
-						name: 'Firefox',
-						category: 1
-					},
-					{
-						name: 'Safari',
-						category: 1
-					}
-				],
-
-				links: [
-					{
-						source: '浏览器有限公司',
-						target: '操作系统集团',
-						name: '参股'
-					},
-					{
-						source: 'HTML科技',
-						target: '浏览器有限公司',
-						name: '参股'
-					},
-					{
-						source: 'CSS科技',
-						target: '浏览器有限公司',
-						name: '参股'
-					},
-					{
-						source: 'JavaScript科技',
-						target: '浏览器有限公司',
-						name: '参股'
-					},
-					{
-						source: 'Chrome',
-						target: '浏览器有限公司',
-						name: '董事'
-					},
-					{
-						source: 'IE',
-						target: '浏览器有限公司',
-						name: '董事'
-					},
-					{
-						source: 'Firefox',
-						target: '浏览器有限公司',
-						name: '董事'
-					},
-					{
-						source: 'Safari',
-						target: '浏览器有限公司',
-						name: '董事'
-					},
-					{
-						source: 'Chrome',
-						target: 'JavaScript科技',
-						name: '法人'
-					}
-				]
-			};
-
-			const color1 = '#006acc';
-			const color2 = '#ff7d18';
-			const color3 = '#10a050';
-
-			data.nodes.forEach(node => {
-				if (node.category === 0) {
-					node.symbolSize = 100;
-					node.itemStyle = {
-						color: color1
-					};
-				} else if (node.category === 1) {
-					node.itemStyle = {
-						color: color2
-					};
-				}
-			});
-
-			data.links.forEach(link => {
-				link.label = {
-					align: 'center',
-					fontSize: 12
-				};
-
-				if (link.name === '参股') {
-					link.lineStyle = {
-						color: color2
-					};
-				} else if (link.name === '董事') {
-					link.lineStyle = {
-						color: color1
-					};
-				} else if (link.name === '法人') {
-					link.lineStyle = {
-						color: color3
-					};
-				}
-			});
-
-			let categories = [
-				{
-					name: '公司',
-					itemStyle: {
-						color: color1
-					}
-				},
-				{
-					name: '董事',
-					itemStyle: {
-						color: color2
-					}
-				}
-			];
-
-			let option = {
-				title: {
-					text: '知识图谱'
-				},
-				legend: [
-					{
-						// selectedMode: 'single',
-						data: categories.map(x => x.name)
-						// icon: 'circle'
-					}
-				],
-				series: [
-					{
-						type: 'graph',
-						layout: 'force',
-						symbolSize: 58,
-						draggable: true,
-						roam: true,
-						focusNodeAdjacency: true,
-						categories: categories,
-						edgeSymbol: ['', 'arrow'],
-						// edgeSymbolSize: [80, 10],
-						edgeLabel: {
-							normal: {
-								show: true,
-								textStyle: {
-									fontSize: 20
-								},
-								formatter(x) {
-									return x.data.name;
-								}
-							}
-						},
-						label: {
-							show: true
-						},
-						force: {
-							repulsion: 2000,
-							edgeLength: 120
-						},
-						data: data.nodes,
-						links: data.links
-					}
-				]
-			};
 			const chartId = this.chartId;
 			const myChart = echarts.init(document.getElementById(chartId));
-			myChart.setOption(option);
+			myChart.on('click', param => {
+				//因为保存了对象同一引用，所以可以使用originalData快速找到目标对象
+				console.log(param);
+			});
+			myChart.setOption(option, true);
+
 			// #endif
 		}
 	}
 };
 </script>
 
-<style>
+<style scoped lang="scss">
 .chart-wrap {
-	height: 100%;
+	height: 1000rpx;
+	width: calc(100% - 20rpx);
+	margin: 5px auto;
 }
 </style>

@@ -59,7 +59,6 @@
 		}
 	],
 	"globalStyle": {
-		// "navigationStyle":"custom",
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-basic",
 		"navigationBarBackgroundColor": "#1abc9c",
