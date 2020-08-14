@@ -1,12 +1,11 @@
 <template>
-	<view class="list-wrap">
-		<s-pull-scroll ref="pullScroll" :pullDown="pullDown" :pullUp="loadData">
-			<ul>
-				<li v-for="(item, index) of dataList" :key="index" style="font-size:30rpx;padding:40rpx;text-align:center;border-bottom:1px solid #aaa">{{ item }}</li>
-			</ul>
-
+	<view class="bx-list">
+		<s-pull-scroll ref="pullScroll" :pullDown="pullDown" :pullUp="loadData" :fixed="false">
+			<view class="list-wrap">
+				<view v-for="(item, index) of dataList" :key="index"><slot name="list-item" :data="item" :test="item"></slot></view>
+			</view>
 			<!-- 使用插槽自定义空白布局 -->
-			<div slot="empty">...</div>
+			<view slot="empty">...</view>
 		</s-pull-scroll>
 	</view>
 </template>
@@ -20,7 +19,7 @@ export default {
 				rownumber: 5,
 				pageNo: 1
 			},
-			dataList: [1, 2, 3, 4, 5, 6, 7],
+			dataList: [1, 2, 3, 4, 5, 6, 7]
 		};
 	},
 	props: {
@@ -41,11 +40,11 @@ export default {
 					this.dataList = [];
 				}
 				const curList = [];
-				for (let i = this.dataList.length; i < this.dataList.length + 20; i++) {
+				for (let i = this.dataList.length; i < this.dataList.length + 10; i++) {
 					curList.push(i);
 				}
 				this.dataList = this.dataList.concat(curList);
-				if (this.dataList.length > 60) {
+				if (this.dataList.length > 30) {
 					pullScroll.finish();
 				} else {
 					pullScroll.success();
@@ -71,11 +70,12 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .list-wrap {
+	width: 100%;
 	display: flex;
 	flex-direction: column;
-	height: 100%;
-	width: 100%;
+	padding-top: 10rpx;
+	// padding: 0 20rpx;
 }
 </style>

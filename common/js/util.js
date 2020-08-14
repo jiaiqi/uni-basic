@@ -3,11 +3,14 @@ import {
 	api
 } from 'common/js/config.js'
 import fly from '@/common/js/http.js' // fly 请求拦截
-
+import deepClone from '@/common/js/function/deepClone.js'
+import formateDate from '@/common/js/function/formatDate.js';
 const install = (Vue, options) => {
 	Vue.prototype.$http = fly
 	Vue.prototype.$config = config
 	Vue.prototype.$api = api
+	Vue.prototype.deepClone = deepClone
+	Vue.prototype.formateDate = formateDate
 	/**
 	 * @param {String} app 
 	 * @param {String} srv - 服务名(serviceName)

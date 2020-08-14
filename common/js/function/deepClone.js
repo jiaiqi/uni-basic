@@ -1,4 +1,4 @@
-import {isArray} from '@/common/js/util.js'
+import isArray from '@/common/js/function/isArray.js'
 // 深度克隆
 function deepClone(obj) {
 	// 对常见的“非”值，直接返回原来值

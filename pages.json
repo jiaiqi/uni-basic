@@ -47,17 +47,21 @@
 			"path": "pages/public/accountExec/accountExec",
 			"style": {}
 		}, {
-			"path": "pages/specific/health/record/record",
+			"path": "pages/specific/health/record",
 			"style": {
 				"navigationBarTitleText": "健康记录"
 			}
 		}, {
-			"path": "pages/specific/health/relation/relation",
+			"path": "pages/specific/health/relation",
 			"style": {
 				"navigationBarTitleText": "疾病详情"
 			}
 		}
-	],
+	    ,{
+            "path" : "pages/specific/health/sportDetail",
+            "style" : {}
+        }
+    ],
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-basic",

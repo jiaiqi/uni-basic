@@ -10,7 +10,9 @@
 						<!-- <u-icon name="play-left-fill" color="#333" size="28" :class="{ active: showUserList }"></u-icon> -->
 						<u-icon name="arrow-down-fill" color="#333" size="28" :class="{ active: showUserList }"></u-icon>
 					</view>
-					<view class="user-list" :class="{ active: showUserList }" @click.stop="clickUserList"><view class="user">hahaha</view></view>
+					<view class="user-list" :class="{ active: showUserList }">
+						<view class="menu-item" @click.stop="clickUserMenu(item)" v-for="(item, index) in userMenuList" :key="index">健康档案</view>
+					</view>
 				</view>
 			</view>
 		</u-navbar>
@@ -49,6 +51,7 @@ export default {
 			backTextStyle: {
 				color: '#333'
 			},
+			userMenuList: [{ label: '健康档案' }],
 			src: 'http://pic2.sc.chinaz.com/Files/pic/pic9/202002/hpic2119_s.jpg',
 			navBackground: {
 				backgroundColor: '#fff'
@@ -82,10 +85,10 @@ export default {
 		}
 	},
 	methods: {
-		toRelationPage(e){
+		toRelationPage(e) {
 			uni.navigateTo({
-				url:'relation/relation'
-			})
+				url: './relation'
+			});
 		},
 		bindDateChange(e) {
 			console.log(e);
@@ -93,6 +96,14 @@ export default {
 		clickPage(e) {
 			if (this.showUserList) {
 				this.showUserList = false;
+			}
+		},
+		clickUserMenu(e) {
+			console.log(e);
+			if (e.label === '健康档案') {
+				uni.navigateTo({
+					url: '/pages/specific/health/record'
+				});
 			}
 		},
 		clickUserList(e) {
@@ -172,6 +183,11 @@ export default {
 				bottom: -310rpx;
 				z-index: 999;
 			}
+			.menu-item {
+				padding: 10rpx;
+				font-weight: bold;
+				border-bottom: 1px solid #fef0f0;
+			}
 			.user {
 				width: 100%;
 				height: 50rpx;
@@ -232,7 +248,7 @@ export default {
 			justify-content: center;
 			align-items: center;
 			background-color: #f1f1f1;
-			margin:10rpx;
+			margin: 10rpx;
 			border-radius: 10rpx;
 			padding: 10rpx;
 		}

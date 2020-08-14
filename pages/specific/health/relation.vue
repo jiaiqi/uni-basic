@@ -2,7 +2,8 @@
 	<view class="health-relation">
 		<!-- 疾病与病症、病因关系 -->
 		<view class="relation">
-			<relationCharts class="relation-charts"></relationCharts>
+			<!-- <relationCharts class="relation-charts"></relationCharts> -->
+			<bx-graph-chart class="relation-charts"></bx-graph-chart>
 			<view class="illness-box content-box">
 				<view class="title">{{ illness.label }}</view>
 				<view class="illness content-item">{{ illness.name }}</view>
