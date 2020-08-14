@@ -2,7 +2,7 @@
 	<view class="bx-list">
 		<s-pull-scroll ref="pullScroll" :pullDown="pullDown" :pullUp="loadData" :top="top">
 			<view class="list-wrap">
-				<view v-for="(item, index) of list" :key="index"><slot name="list-item" :data="item" :test="item"></slot></view>
+				<view v-for="(item, index) of list" :key="index"><slot name="listitem" :data="item" :test="item"></slot></view>
 			</view>
 			<!-- 使用插槽自定义空白布局 -->
 			<view slot="empty">...</view>

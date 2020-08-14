@@ -45,21 +45,21 @@
 		</view>
 		<view class="foot-record">
 			<text class="title">运动记录</text>
-			<bx-list class="list-wrap" :list="stepRecord" :top="580">
-				<view class="list-item record-item" slot="list-item" slot-scope="item">
-					<view class="date">{{ item.data.date }}</view>
+			<bx-list class="list-wrap" :list="stepRecord" :top="580" v-slot:listitem="{data}">
+				<view class="list-item record-item">
+					<view class="date">{{ data.date }}</view>
 					<view class="icon"><text class="iconfont icon-yundong"></text></view>
 					<view class="step-number">
-						<text class="number">{{ item.data.stepNum }}</text>
+						<text class="number">{{ data.stepNum }}</text>
 						<text class="unit">步</text>
 					</view>
 					<view class="calorie">
-						<text class="number">{{ item.data.calorie }}</text>
+						<text class="number">{{ data.calorie }}</text>
 						<text class="unit">千卡</text>
 					</view>
 				</view>
 			</bx-list>
-			<!-- <view class="record-item" v-for="(item, index) in stepRecord" :key="index">
+		<!-- 	<view class="record-item" v-for="(item, index) in stepRecord" :key="index">
 				<view class="date">{{ item.date }}</view>
 				<view class="icon"><text class="iconfont icon-yundong"></text></view>
 				<view class="step-number">
