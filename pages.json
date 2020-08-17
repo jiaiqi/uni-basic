@@ -7,12 +7,6 @@
 			}
 		},
 		{
-			"path": "pages/public/accountExec/accountExec",
-			"style": {
-				"navigationBarTitleText": "登录"
-			}
-		},
-		{
 			"path": "pages/public/home/home",
 			"style": {
 				"navigationBarTitleText": "首页"
@@ -42,9 +36,6 @@
 			"style": {}
 		}, {
 			"path": "pages/public/proc/detail/detail",
-			"style": {}
-		}, {
-			"path": "pages/public/accountExec/accountExec",
 			"style": {}
 		}
 	],
