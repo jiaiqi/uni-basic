@@ -7,7 +7,25 @@ import fly from '@/common/js/http.js' // fly 请求拦截
 const install = (Vue, options) => {
 	Vue.prototype.$http = fly
 	Vue.prototype.$config = config
-	Vue.prototype.$api = api
+	Vue.prototype.$api = { ...config,
+		...api
+	}
+	Vue.prototype.getDecodeUrl = function(e) {
+		if (Vue.prototype.isInvalid(e)) {
+			let url = decodeURIComponent(e)
+			console.log('getDecodeUrl 01', url)
+			if (url.indexOf("%") !== -1) {
+				console.log('getDecodeUrl 02', url)
+				url = decodeURIComponent(e)
+				Vue.prototype.getDecodeUrl(url)
+			} else {
+				console.log('getDecodeUrl 03', url)
+				return url
+			}
+		} else {
+			return false
+		}
+	}
 	/**
 	 * @param {String} app 
 	 * @param {String} srv - 服务名(serviceName)
@@ -17,7 +35,7 @@ const install = (Vue, options) => {
 	Vue.prototype.getServiceUrl = function(app, srv, srvType, url) {
 		// 获取转换URL app, srv, srvType, url
 		let singleApp = this.$api.singleApp
-		let urlVal = url || this.$api.srvHost
+		let urlVal = url || Vue.prototype.$api.srvHost
 		let appVal = app
 		if (singleApp) {
 			appVal = this.$api.appName

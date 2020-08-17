@@ -1,6 +1,6 @@
 <template>
 	<view class="login">
-		<view class="login-main">
+		<view class="login-main" v-if="client_env === 'web'">
 			<view class="login-logo">
 				<image src="../../static/img/sun.png" mode=""></image>
 				<!-- 	<view class="logo-tip">
@@ -8,11 +8,11 @@
 				</view> -->
 			</view>
 			<view class="login-list flex border-all">
-				<view class="cuIcon-people  flex"></view>
+				<view class="cuIcon-people flex"></view>
 				<view class="login-input"><input autocomplete="off" type="text" maxlength="30" placeholder="请输入账号" class="is-input1 " v-model="user.user_no" /></view>
 			</view>
 			<view class="login-list flex border-all">
-				<view class="cuIcon-lock  flex"></view>
+				<view class="cuIcon-lock flex"></view>
 				<view class="login-input">
 					<input autocomplete="off" type="password" maxlength="16" placeholder="请输入密码" class="is-input1 " v-model="user.pwd" @confirm="accountLogin(user)" />
 				</view>
@@ -24,15 +24,12 @@
 				<navigator class="navigator">软件许可及服务协议</navigator>
 			</view>
 		</view>
+		<!-- #ifdef MP-WEIXIN -->
 		<view class="login-footer">
-			<!-- #ifdef MP-WEIXIN -->
 			<view class="footer-tip flex">其他登录方式</view>
-			<!-- #endif -->
 			<view class="footer-other flex">
 				<view class="other-list">
-					<!-- #ifdef MP-WEIXIN -->
 					<button class="confirm-btn" lang="zh_CN" open-type="getUserInfo" @getuserinfo="loginAndAuth" :withCredentials="false" :disabled="disabled"></button>
-					<!-- #endif -->
 					<!-- <button class="confirm-btn bg-grey" type="default" @tap="navBack" :disabled="false"></button> -->
 					<!-- #ifdef H5 -->
 					<!-- <view class="image" id="login_container"><image src="../../static/img/wechat.png" mode="aspectFill" @tap="login_weixin()"></image></view> -->
@@ -41,6 +38,7 @@
 				</view>
 			</view>
 		</view>
+		<!-- #endif -->
 	</view>
 </template>
 
@@ -51,13 +49,158 @@ export default {
 			user: {
 				user_no: '',
 				pwd: ''
-			}
+			},
+			client_env: uni.getStorageSync('client_env')
 		};
 	},
 	onLoad() {
-		
+		let client_env = uni.getStorageSync('client_env');
+		let isLogin = uni.getStorageSync('isLogin');
+		if (client_env === 'wxh5') {
+			if (isLogin) {
+				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
+				alert('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
+				if (uni.getStorageSync('backUrl') && uni.getStorageSync('backUrl') !== '/') {
+					console.log('即将跳转到backUrl页面')
+					uni.redirectTo({
+						url: uni.getStorageSync('backUrl')
+					});
+				} else {
+					console.log('即将跳转到homePath')
+					uni.redirectTo({
+						url: this.$config.homePath
+					});
+				}
+			} else {
+				console.log('未登录，进行初始化授权', uni.getStorageSync('isLogin'));
+				alert('未登录，进行初始化授权', uni.getStorageSync('isLogin'));
+				this.wxh5Auth();
+			}
+		}
 	},
 	methods: {
+		wxh5Auth() {
+			let code = this.$route.query.code;
+			console.log('code', code);
+			if (code) {
+				const client_env = uni.getStorageSync('client_env');
+				if (client_env === 'wxh5' || client_env === 'wxmp') {
+					console.log('已获取到code,即将进行验证登录');
+					alert('已获取到code,即将进行验证登录');
+					this.saveWxUser();
+				} else {
+					// 非微信环境(H5或APP)
+					uni.showToast({
+						title: '请在微信中访问此页面',
+						icon: 'none',
+						duration: 3000
+					});
+				}
+			} else {
+				// 未授权 -> 获取授权
+				console.log('未发现code,尝试获取重定向链接');
+				alert('未发现code,尝试获取重定向链接');
+				this.getWxCode();
+			}
+		},
+		getWxCode() {
+			// 引导用户进入授权页面同意授权，在回调地址中获取code,获取code
+			let self = this;
+			let url = self.getServiceUrl('wx', 'srvwx_public_page_authorization', 'operate');
+			let req = [
+				{
+					data: [
+						{
+							app_no: self.$config.appNo.wxh5,
+							redirect_uri: self.$config.frontEndAddress
+						}
+					],
+					serviceName: 'srvwx_public_page_authorization'
+				}
+			];
+			let burl = uni.getStorageSync('backUrl');
+			this.$http.post(url, req).then(response => {
+				if (response.data.response[0].response.authUrl) {
+					alert("成功获取回调地址,",response.data.response[0].response.authUrl)
+					window.location.href = response.data.response[0].response.authUrl;
+				} else {
+					uni.showToast({
+						title: response.data.resultMessage,
+						icon: 'none'
+					});
+				}
+			});
+		},
+		saveWxUser() {
+			let _this = this;
+			let req = [
+				{
+					data: [
+						{
+							code: _this.$route.query.code,
+							app_no: _this.$config.appNo.wxh5
+						}
+					],
+					serviceName: 'srvwx_app_login_verify'
+				}
+			];
+			console.log('saveWxUser请求参数:',req)
+			_this.$http.post(url, req).then(response => {
+				if (response.data.resultCode === 'SUCCESS' && response.data.response[0].response) {
+					console.log('授权成功', response);
+					alert('授权成功', response)
+					let resData = response.data.response[0].response;
+					let loginMsg = {
+						bx_auth_ticket: resData.bx_auth_ticket,
+						expire_time: resData.expire_time
+					};
+					uni.setStorageSync('isLogin', true);
+					console.log('登录成功', uni.getStorageSync('isLogin'), resData);
+					let expire_timestamp = parseInt(new Date().getTime() / 1000) + loginMsg.expire_time; //过期时间的时间戳(秒)
+					uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
+					// let expire_timestamp = parseInt(new Date().getTime() / 1000) + 10; //过期时间的时间戳(秒)
+					// uni.setStorageSync('expire_time', 10); // 有效时间
+					uni.setStorageSync('bx_auth_ticket', resData.bx_auth_ticket);
+					uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
+					if (resData.login_user_info && resData.login_user_info.user_no) {
+						uni.setStorageSync('login_user_info', resData.login_user_info);
+						console.log('login_user_info', resData.login_user_info);
+					}
+					if (resData.login_user_info && resData.login_user_info.data) {
+						uni.setStorageSync('visiter_user_info', resData.login_user_info.data[0]);
+						uni.setStorageSync('login_user_info', resData.login_user_info);
+						console.log('visiter_user_info', resData.login_user_info);
+					}
+					// 获取回调前记录的url 并再回调后 再次进入该url，没有该url时 进入 home
+					let url = uni.getStorageSync('backUrl');
+					console.log('_this.backUrl', _this.backUrl, '===', url);
+					uni.hideLoading();
+					if (url && url !== '/') {
+						url = _this.getDecodeUrl(url);
+						if (url && url.lastIndexOf('backUrl=') !== -1) {
+							url = url.substring(url.lastIndexOf('backUrl=') + 8, url.length);
+							console.log('授权成功，准备返回用户界面url', url);
+						}
+						alert('授权成功，准备返回用户界面url', url)
+						uni.reLaunch({
+							url: url
+						});
+					} else {
+						alert('授权成功，准备返回首页', url)
+						uni.reLaunch({
+							url: _this.$config.homePath
+						});
+					}
+				} else {
+					uni.setStorageSync('isLogin', false);
+					console.log('授权失败');
+					// uni.showToast({
+					// 	title:'授权失败',
+					// 	icon:'none'
+					// })
+				}
+			});
+		},
 		loginAndAuth(e) {
 			//登录并授权
 			console.log(e);
@@ -157,93 +300,6 @@ export default {
 					url: '/pages/guide/list'
 				});
 			}
-		},
-		//QQ登录
-		login_qq() {
-			let _this = this;
-			uni.login({
-				provider: 'qq',
-				success: function(loginRes) {
-					// 获取用户信息
-					uni.getUserInfo({
-						provider: 'qq',
-						success: function(infoRes) {
-							_this.other_login(loginRes, infoRes, 'qq');
-						}
-					});
-				}
-			});
-		},
-		//微信登录
-		async login_weixin() {
-			let _this = this;
-			// #ifdef MP
-			uni.login({
-				provider: 'weixin',
-				success: function(loginRes) {
-					// 获取用户信息
-					uni.getUserInfo({
-						provider: 'weixin',
-						success: function(infoRes) {
-							_this.other_login(loginRes, infoRes, 'wx');
-						}
-					});
-				}
-			});
-			// #endif
-			let url = this.getServiceUrl('wx2', 'srvwx_web_scan_cfg_select', 'select');
-			// srvwx_web_scan_cfg_select
-		},
-		//授权登录
-		other_login(loginRes, infoRes, type) {
-			let _this = this;
-			let url;
-			let pram = {};
-			// _this.loginRes=JSON.stringify(loginRes).toString();
-			// _this.infoRes=JSON.stringify(infoRes).toString();
-			switch (type) {
-				case 'qq':
-					url = '/token/sys/login-qq';
-					pram = {
-						openid: loginRes.authResult.openid,
-						nickname: infoRes.userInfo.nickname,
-						gender: infoRes.userInfo.gender,
-						province: infoRes.userInfo.province,
-						city: infoRes.userInfo.city,
-						figureurl: infoRes.userInfo.figureurl_qq
-					};
-					break;
-				case 'wx':
-					url = '/token/sys/login-wechat';
-					pram = {
-						openid: loginRes.authResult.openid,
-						nickname: infoRes.userInfo.nickName,
-						sex: infoRes.userInfo.gender,
-						province: infoRes.userInfo.province,
-						city: infoRes.userInfo.city,
-						country: infoRes.userInfo.country,
-						headimgurl: infoRes.userInfo.avatarUrl,
-						unionid: loginRes.authResult.unionid
-					};
-					break;
-				default:
-			}
-			uni.request({
-				url: _this.websiteUrl + url,
-				data: pram,
-				method: 'POST',
-				header: {
-					'Content-Type': 'application/x-www-form-urlencoded'
-				},
-				success: res => {
-					if (res.data.code == 200) {
-						//_this.testData=JSON.stringify(res.data.data).toString();;
-						_this.login(true, res.data.data, function() {
-							_this.getRongyToken();
-						});
-					}
-				}
-			});
 		}
 	}
 };

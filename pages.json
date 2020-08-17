@@ -1,6 +1,18 @@
 {
 	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/public/accountExec/accountExec",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
 			"path": "pages/public/home/home",
 			"style": {
 				"navigationBarTitleText": "首页"
@@ -16,11 +28,6 @@
 			"style": {}
 		},
 		{
-			"path": "pages/login/login",
-			"style": {
-				"navigationBarTitleText": "登录"
-			}
-		}, {
 			"path": "pages/public/proc/list/list",
 			"style": {}
 		}, {
@@ -42,7 +49,7 @@
 		}
 	],
 	"globalStyle": {
-		// "navigationStyle":"custom",
+		"navigationStyle":"custom",
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-basic",
 		"navigationBarBackgroundColor": "#1abc9c",
