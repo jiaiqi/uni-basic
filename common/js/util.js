@@ -6,7 +6,6 @@ import fly from '@/common/js/http.js' // fly 请求拦截
 
 const install = (Vue, options) => {
 	Vue.prototype.$http = fly
-	Vue.prototype.$config = config
 	Vue.prototype.$api = { ...config,
 		...api
 	}

@@ -59,7 +59,6 @@ export default {
 		if (client_env === 'wxh5') {
 			if (isLogin) {
 				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
-				alert('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
 				if (uni.getStorageSync('backUrl') && uni.getStorageSync('backUrl') !== '/') {
 					console.log('即将跳转到backUrl页面')
 					uni.redirectTo({
@@ -68,12 +67,11 @@ export default {
 				} else {
 					console.log('即将跳转到homePath')
 					uni.redirectTo({
-						url: this.$config.homePath
+						url: this.$api.homePath
 					});
 				}
 			} else {
 				console.log('未登录，进行初始化授权', uni.getStorageSync('isLogin'));
-				alert('未登录，进行初始化授权', uni.getStorageSync('isLogin'));
 				this.wxh5Auth();
 			}
 		}
@@ -86,7 +84,6 @@ export default {
 				const client_env = uni.getStorageSync('client_env');
 				if (client_env === 'wxh5' || client_env === 'wxmp') {
 					console.log('已获取到code,即将进行验证登录');
-					alert('已获取到code,即将进行验证登录');
 					this.saveWxUser();
 				} else {
 					// 非微信环境(H5或APP)
@@ -99,7 +96,6 @@ export default {
 			} else {
 				// 未授权 -> 获取授权
 				console.log('未发现code,尝试获取重定向链接');
-				alert('未发现code,尝试获取重定向链接');
 				this.getWxCode();
 			}
 		},
@@ -111,8 +107,8 @@ export default {
 				{
 					data: [
 						{
-							app_no: self.$config.appNo.wxh5,
-							redirect_uri: self.$config.frontEndAddress
+							app_no: self.$api.appNo.wxh5,
+							redirect_uri: self.$api.frontEndAddress
 						}
 					],
 					serviceName: 'srvwx_public_page_authorization'
@@ -121,7 +117,7 @@ export default {
 			let burl = uni.getStorageSync('backUrl');
 			this.$http.post(url, req).then(response => {
 				if (response.data.response[0].response.authUrl) {
-					alert("成功获取回调地址,",response.data.response[0].response.authUrl)
+					console.log("成功获取回调地址,",response.data.response)
 					window.location.href = response.data.response[0].response.authUrl;
 				} else {
 					uni.showToast({
@@ -133,12 +129,13 @@ export default {
 		},
 		saveWxUser() {
 			let _this = this;
+			const url = this.getServiceUrl('wx', 'srvwx_app_login_verify', 'operate');
 			let req = [
 				{
 					data: [
 						{
 							code: _this.$route.query.code,
-							app_no: _this.$config.appNo.wxh5
+							app_no: _this.$api.appNo.wxh5
 						}
 					],
 					serviceName: 'srvwx_app_login_verify'
@@ -148,7 +145,6 @@ export default {
 			_this.$http.post(url, req).then(response => {
 				if (response.data.resultCode === 'SUCCESS' && response.data.response[0].response) {
 					console.log('授权成功', response);
-					alert('授权成功', response)
 					let resData = response.data.response[0].response;
 					let loginMsg = {
 						bx_auth_ticket: resData.bx_auth_ticket,
@@ -181,14 +177,12 @@ export default {
 							url = url.substring(url.lastIndexOf('backUrl=') + 8, url.length);
 							console.log('授权成功，准备返回用户界面url', url);
 						}
-						alert('授权成功，准备返回用户界面url', url)
 						uni.reLaunch({
 							url: url
 						});
 					} else {
-						alert('授权成功，准备返回首页', url)
 						uni.reLaunch({
-							url: _this.$config.homePath
+							url: _this.$api.homePath
 						});
 					}
 				} else {

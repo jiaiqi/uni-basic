@@ -7,7 +7,7 @@ const config = {
 		frontEndAddress: 'https://wx2.100xsys.cn',
 		test: "", //测试接口
 	},
-	frontEndAddress: 'https://wx2.100xsys.cn',
+	frontEndAddress: 'https://wx2.100xsys.cn/ymt/',
 	backEndAddress: 'https://srvms.100xsys.cn',
 	onTicket: false, //使用本地的bx_auth_ticket
 	bx_auth_ticket: "",

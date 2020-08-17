@@ -7,6 +7,7 @@
 			ref="sitePage"
 			:style="{ 'padding-bottom': websiteList.length > 1 ? '100upx' : 0 }"
 		></SitePage>
+		<button type="default" @click="toSomePage"></button>
 		<view class="cu-bar tabbar bg-white shadow foot" v-if="websiteList.length > 1">
 			<view class="action" v-for="(item, siteIndex) in websiteList" :key="siteIndex" @click="changePage(item,siteIndex)">
 				<view class="cuIcon-cu-image" v-if="item.page_name == '首页' && item.page_no !== currentPage.page_no"><image src="/static/img/home.png"></image></view>
@@ -41,6 +42,9 @@ export default {
 			uni.navigateTo({
 				url: e.dest_page
 			});
+		},
+		toSomePage(){
+			window.location.href  ='https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI1NjE2NzE1OA==&scene=124#wechat_redirect'
 		},
 		changePage(item,index) {
 			let websiteList = this.websiteList;
