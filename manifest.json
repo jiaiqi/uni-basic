@@ -77,13 +77,19 @@
     },
     "h5" : {
         "router" : {
-            "mode" : "history"
+            "mode" : "history",
+            "base" : "/ymt/"
         },
         "optimization" : {
             "treeShaking" : {
                 "enable" : true
             }
         },
-        "template" : ""
+        "template" : "template.html",
+        "title" : "ubasic",
+        "domain" : "https://wx2.100xsys.cn",
+        "devServer" : {
+            "https" : false
+        }
     }
 }

@@ -131,7 +131,7 @@ export default {
         let data = res.data.data;
         this.contList = data;
         data.forEach((item, index) => {
-          item['picUrl'] = this.$api.serverURL + '/file/download?fileNo=' + item.icon_image;
+          item['picUrl'] = this.$api.serverHost + '/file/download?fileNo=' + item.icon_image;
           this.$set(data, index, item);
           // this.getPictureUrl(item.icon_image).then(url => {
           //   item['picUrl'] = url;
