@@ -16,9 +16,7 @@
 					:moreConfig="colsV2Data && colsV2Data.more_config ? colsV2Data.more_config : null"
 				></bxform>
 				<bxButtons :buttons="buttons" @on-button-change="onButton($event)" v-if="buttons && buttons.length > 0 && formDisabled != true"></bxButtons>
-				<!-- <button class="bg-green cu-btn lg">查看列表</button> -->
 				<view class="sublist-content" v-if="type === 'detail' && childService && childService.length > 0">
-					<!-- <view class="sublist-content" v-if="type === 'detail'&&hasChildService"> -->
 					<view class="sublist-box" v-if="showSublist">
 						<view class="child-service" v-for="item in childService" :key="item.service_name">
 							<view
@@ -54,14 +52,6 @@
 							</view>
 						</view>
 					</view>
-					<!-- 	<button class="cu-btn  bg-blue margin-tb-sm" v-if="!showSublist&&hasChildService" @click="showSublist = !showSublist">
-				展开子表
-				<text class="lg text-white cuIcon-down margin-left-xs"></text>
-			</button>
-			<button class="cu-btn  bg-blue margin-tb-sm" v-if="showSublist" @click="showSublist = !showSublist">
-				收起子表
-				<text class="lg text-white cuIcon-top margin-left-xs"></text>
-			</button> -->
 				</view>
 			</view>
 		</view>
@@ -114,6 +104,23 @@ export default {
 				buttons = this.colsV2Data._formButtons;
 				// return this.colsV2Data._formButtons;
 			}
+			let submitBtn = {
+				del_flag: '否',
+				page_type: '增加',
+				button_name: '提交',
+				button_type: 'submit',
+				always_show: false,
+				permission: true,
+				client_type: 'PC,APP',
+				biz_path: '/syscore/',
+				application: 'spocp',
+				is_public: true,
+				service_name: 'srvspocp_user_real_name_auth',
+				id: 18,
+				page_area: '底部按钮',
+				seq: 100
+			};
+			buttons = [submitBtn, ...buttons];
 			let data = {};
 			if (Array.isArray(this.fields)) {
 				this.fields.forEach(item => {
@@ -121,26 +128,6 @@ export default {
 				});
 				let fieldModel = data;
 			}
-			buttons.forEach(btn => {
-				if (btn.disp_exps) {
-					btn['display'] = eval(btn.disp_exps);
-				}
-				if (btn.operate_params) {
-					let fieldData = btn.operate_params['data'];
-					if (fieldData && Array.isArray(fieldData) && fieldData.length > 0) {
-						fieldData = fieldData[0];
-						let newData = {};
-						Object.keys(fieldData).forEach(data_item => {
-							let item = fieldData[data_item];
-							if (item.value_type && item.value_type === 'rowData') {
-								newData[data_item] = fieldModel[item.value_key];
-							}
-						});
-						btn['requestData'] = newData;
-						btn['requestCondition'] = this.condition;
-					}
-				}
-			});
 			return buttons;
 		}
 	},
@@ -194,93 +181,16 @@ export default {
 			this.getFieldsV2(condition);
 		}
 	},
-	onLoad(option) {
-		let query = JSON.parse(decodeURIComponent(option.query ? option.query : option.params ? option.params : '{}'));
-		const destApp = query.destApp;
-		if (destApp) {
-			uni.setStorageSync('activeApp', destApp);
-		}
-		if (option.serviceName) {
-			query = option;
-		}
-		if (query.params) {
-			this.params = JSON.parse(query.params);
-		}
-		if (query.formData) {
-			try {
-				this.formData = JSON.parse(decodeURIComponent(query.formData));
-				console.log('formData-formPage', this.formData);
-			} catch (e) {
-				console.log('formData', e);
-				//TODO handle the exception
-			}
-		}
-		if(option.defaultVal){
-			try{
-				this.defaultVal = JSON.parse(option.defaultVal)
-			}catch(e){
-				//TODO handle the exception
-				console.log(e)
-			}
-		}
-		if (option.params) {
-			this.params = query;
-		}
-		if (query.cond || query.condition) {
-			let cond = '';
-			if (typeof query.cond === 'string' && query.cond) {
-				cond = JSON.parse(query.cond);
-			}
-			if (typeof query.condition === 'object') {
-				cond = query.condition;
-			}
-			this.defaultCondition = cond
-		}
-		if (option.hasOwnProperty('loadedType')) {
-			this.loadedType = option.loadedType;
-		} else if (option.hasOwnProperty('params')) {
-			this.serviceName = this.params.serviceName;
-			this.type = this.params.type;
-			if (this.params.defaultCondition) {
-				this.defaultCondition = this.params.defaultCondition;
-			}
-			if (this.params.cond && Array.isArray(this.params.cond)) {
-				this.condition = this.params.cond;
-			}
-			if (this.params.defaultVal) {
-				this.defaultVal = this.params.defaultVal;
-			}
-			if (this.params.condition && Array.isArray(this.params.condition)) {
-				this.params.condition.forEach(item=>{
-					if (item.colName === 'openid' && item.value === 'user_no') {
-						item.value = uni.getStorageSync('login_user_info').user_no;
-					}
-				})
-				this.condition = this.params.condition;
-			}
-		} else if (query.serviceName && query.type) {
-			this.serviceName = query.serviceName;
-			this.type = query.type;
-			if (option.hasOwnProperty('cond')) {
-				try {
-					this.condition = JSON.parse(decodeURIComponent(option.cond));
-				} catch (e) {
-					//TODO handle the exception
-					console.log(e);
-				}
-			}
-			this.getFieldsV2(this.condition);
-		} else {
-			uni.showToast({
-				title: '加载错误',
-				icon: 'none'
-			});
-		}
+	onLoad() {
+		this.serviceName = 'srvspocp_user_auth_info_select';
+		this.type = 'add';
+		this.getFieldsV2(this.condition);
 	},
 
 	methods: {
 		resetForm(e) {
 			// 重置表单
+			this.fields = null;
 			this.fields = this.deepClone(e);
 		},
 		toChildList(e) {
@@ -487,6 +397,12 @@ export default {
 					} else {
 						this.fields = colVs._fieldInfo;
 					}
+					this.fields.forEach(item => {
+						if (item.column === 'auth_user_no') {
+							item.disabled = true;
+							item.value = uni.getStorageSync('login_user_info').user_no;
+						}
+					});
 					break;
 				case 'detail':
 					this.fields = this.setFieldsDefaultVal(colVs._fieldInfo, this.defaultVal);
@@ -516,15 +432,8 @@ export default {
 		},
 		async onButton(e) {
 			let data = this.$refs.bxForm.getFieldModel();
-			if (!data) {
-				uni.showToast({
-					title: '未发现修改内容'
-				});
-				return;
-			}
 			let req = this.deepClone(data);
-			console.log(this.condition);
-			console.log(e, req);
+			let _this = this;
 			switch (e.button_type) {
 				case 'edit':
 					if (e.page_type === '详情') {
@@ -564,17 +473,24 @@ export default {
 						req = [{ serviceName: e.service_name, data: [req] }];
 						let app = uni.getStorageSync('activeApp');
 						let url = this.getServiceUrl(app, e.service_name, 'add');
+						if (e.serviceName === 'srvspocp_user_real_name_auth') {
+							url = this.getServiceUrl(app, e.service_name, 'operate');
+						}
+						// srvspocp_user_real_name_auth
 						console.log(url, e);
 						let res = await this.$http.post(url, req);
 						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
 								title: '提示',
-								content: '添加成功',
+								content: '登记成功',
 								showCancel: false,
 								success(res) {
 									if (res.confirm) {
-										uni.navigateBack();
+										// uni.navigateBack();
+										uni.reLaunch({
+											url: _this.$api.homePath
+										});
 									}
 								}
 							});

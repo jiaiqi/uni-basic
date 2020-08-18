@@ -7,13 +7,13 @@ const config = {
 		frontEndAddress: 'https://wx2.100xsys.cn',
 		test: "", //测试接口
 	},
-	frontEndAddress: 'https://wx2.100xsys.cn',
+	frontEndAddress: 'https://wx2.100xsys.cn/ymt/',
 	backEndAddress: 'https://srvms.100xsys.cn',
 	onTicket: false, //使用本地的bx_auth_ticket
 	bx_auth_ticket: "",
-	appName: "daq", //默认服务app
-	activeApp: "daq", //当前服务app
-	singleApp: false, //是否单app项目
+	appName: "spocp", //默认服务app
+	activeApp: "spocp", //当前服务app
+	singleApp: true, //是否单app项目
 	homePath: "/pages/public/home/home", //登录后默认要跳转到的页面
 	appID: {
 		// wxmp: 'wx8e6f993081f6e979',// 百想助理

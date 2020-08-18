@@ -38,7 +38,11 @@
 			"path": "pages/public/proc/detail/detail",
 			"style": {}
 		}
-	],
+	    ,{
+            "path" : "pages/specific/addInfo/addInfo",
+            "style" : {}
+        }
+    ],
 	"globalStyle": {
 		"navigationStyle":"custom",
 		"navigationBarTextStyle": "white",

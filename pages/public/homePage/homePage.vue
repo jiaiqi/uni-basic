@@ -48,7 +48,7 @@ export default {
 					titleCol: 'title',
 					dateCol: 'create_time'
 				}
-			},
+			}
 		};
 	},
 	onShow() {},

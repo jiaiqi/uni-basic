@@ -6,9 +6,11 @@ import fly from '@/common/js/http.js' // fly 请求拦截
 
 const install = (Vue, options) => {
 	Vue.prototype.$http = fly
-	Vue.prototype.$config = config
 	Vue.prototype.$api = { ...config,
 		...api
+	}
+	Vue.prototype.isArray = (e) => {
+		return Array.isArray(e)
 	}
 	Vue.prototype.getDecodeUrl = function(e) {
 		if (Vue.prototype.isInvalid(e)) {
@@ -50,6 +52,533 @@ const install = (Vue, options) => {
 		console.log("url:", urlVal + '/' + appVal + '/' + srvTypeVal + '/' + srvVal)
 		return urlVal + '/' + appVal + '/' + srvTypeVal + '/' + srvVal
 	}
+	Vue.prototype.selectRequestObjs = function(srv, cond, order) { // 给自定义方法起个名
+		let selectRequestObj = {}
+		selectRequestObj['serviceName'] = ''
+		selectRequestObj['colNames'] = ['*']
+		selectRequestObj['condition'] = []
+		if (srv) {
+			selectRequestObj['serviceName'] = srv
+		}
+		if (cond) {
+			selectRequestObj['condition'] = cond
+		}
+		if (order) {
+			selectRequestObj['order'] = order
+		}
+
+		return selectRequestObj
+	}
+	/**
+	 * @param {String} srv - 服务名(serviceName)
+	 * @param {String} srvType 
+	 * @param {String} pageType  // use_type 取值
+	 * @param {String} app 
+	 */
+	Vue.prototype.getServiceV2 = async function(srv, srvType, pageType, app) { // 表单信息 srvType : add | update | list | detail | select
+		// use_type: detail | proclist | list | treelist | detaillist | selectlist | addchildlist | updatechildlist | procdetaillist | add | update
+		let self = this
+		let appName = app || uni.getStorageSync("activeApp")
+		if (srv && srvType && pageType) {
+			let len = srv.lastIndexOf('_')
+			let serviceName = srv.slice(0, len) + '_'
+			if (srvType === 'list' || srvType === 'detail') {
+				serviceName += 'select'
+			} else {
+				serviceName += srvType
+			}
+			let cols = []
+			let nCols = cols.filter(item => item.service_name === serviceName && item.use_type === pageType)
+			if (nCols.length === 0) {
+				let req = this.selectRequestObjs()
+				req.serviceName = 'srvsys_service_columnex_v2_select'
+				req.colNames = ['*']
+				req.condition = []
+				let condObj = {}
+				condObj['colName'] = 'service_name'
+				condObj['ruleType'] = 'eq'
+				condObj['value'] = serviceName
+				req.condition[0] = JSON.parse(JSON.stringify(condObj))
+				condObj['colName'] = 'use_type'
+				condObj['ruleType'] = 'eq'
+				condObj['value'] = pageType
+				req.condition[1] = JSON.parse(JSON.stringify(condObj))
+				req.order = [{}]
+				req.order[0]['colName'] = 'seq'
+				req.order[0]['orderType'] = 'asc'
+				let url = Vue.prototype.getServiceUrl(appName, "srvsys_service_columnex_v2_select", "select", url)
+				url = url + "?colsel_v2=" + serviceName
+				const response = await this.$http.post(url, req)
+				if (response.data.data) {
+					response.data.data.use_type = pageType
+					if ('rowButton' in response.data.data) {
+						// response.data.data._footerBtns = this.getFooterBtns(response.data.data.rowButton)
+					}
+					// 第一次拿到，缓存
+					let pageconfig = Vue.prototype.getPageConfig(response.data.data, pageType)
+					// self.$store.commit('setSrvCol', pageconfig)
+					return pageconfig
+				}
+			} else {
+				return nCols[0]
+			}
+		} else {
+			return false
+		}
+	}
+	/**
+	 * @param {String} v2res  V2 请求原始数据
+	 * 
+	 */
+	Vue.prototype.getPageConfig = function(v2res, useType) {
+		let pageConfigs = v2res || false
+		if (pageConfigs) {
+			pageConfigs["_fieldInfo"] = Vue.prototype.getFieldInfo(v2res.srv_cols, useType)
+			// pageConfigs["_fieldInfo"] = Vue.prototype.arraySort(pageConfigs["_fieldInfo"], "seq")
+			if (useType === 'list') {
+				pageConfigs["_buttonInfo"] = Vue.prototype.getButtonInfo(v2res.gridButton)
+			}
+			if (useType === 'treelist') {
+				// pageConfigs["_buttonInfo"] = Vue.prototype.getButtonInfo(v2res.gridButton)
+				pageConfigs["_rowButtons"] = Vue.prototype.getButtonInfo(v2res.rowButton, useType)
+				pageConfigs["_handerButtons"] = Vue.prototype.getButtonInfo(v2res.gridButton, useType)
+			} else if (useType === 'update' || useType === 'add' || useType === 'detail') {
+				pageConfigs["_formButtons"] = Vue.prototype.getButtonInfo(v2res.formButton, useType)
+			}
+			console.log("pageConfigs", pageConfigs)
+			return pageConfigs
+		} else {
+			return false
+		}
+	}
+	/** 封装 field 的配置信息
+	 * @param {String} srvCol  cols 数组
+	 * @param {String} useType userType,页面类型
+	 */
+	Vue.prototype.getFieldInfo = function(srvCol, useType) {
+		let cols = srvCol
+		let fieldInfo = {}
+		switch (useType) {
+			// 统一根据页面类型 过滤字段显示 === 2 暂不支持
+			case "add":
+				cols = cols.filter((item, index) => {
+					// if (item.in_add !== 0) {
+					if (item.in_add === 1 || item.in_add == 2) {
+						if (item.in_add === 2) {
+							// item.display = false
+						}
+						return item
+					}
+				})
+				break;
+			case "update":
+				cols = cols.filter((item, index) => {
+					if (item.in_update === 1) {
+						return item
+					}
+				})
+				break;
+			case "detail":
+				cols = cols.filter((item, index) => {
+					// if (item.in_detail !== 0) {
+					if (item.in_detail === 1) {
+						return item
+					}
+				})
+				break;
+			default:
+				break;
+		}
+		cols = cols.map((item, index) => {
+			fieldInfo = {
+				column: "",
+				label: "",
+				defaultValue: null,
+				isRequire: null,
+				type: null,
+			}
+
+			fieldInfo.column = item.columns
+			fieldInfo.label = item.label
+			fieldInfo.seq = item.seq
+			fieldInfo.option_list_v2 = item.option_list_v2
+			fieldInfo.bx_col_type = item.bx_col_type
+			fieldInfo.redundant = item.redundant
+			fieldInfo.col_type = item.col_type
+			fieldInfo.section = item.section
+			fieldInfo.validators = item.validators
+
+			// col_type 转换 表单组件 type 
+			if (item.col_type === "String" || item.col_type === "TelNo" || item.col_type === 'IdNo') {
+				fieldInfo.type = "input"
+			} else if (item.col_type === "DateTime") {
+				fieldInfo.type = "dateTime"
+			} else if (item.col_type === "FileList") {
+				fieldInfo.type = "file"
+				fieldInfo.srvInfo = {
+					tableName: item.table_name,
+					appNo: item.table_name.substring(item.table_name.indexOf("bx") + 2, item.table_name.indexOf("_"))
+				}
+			} else if (item.col_type === "Image") {
+				// } else if (item.col_type === "Image" || item.col_type === "FileList") {
+				fieldInfo.type = "images"
+				if (item.columns === "identity_image" || item.columns === "id_card_photo") {
+					if (item.more_config) {
+						try {
+							let settings = JSON.parse(item.more_config)
+							fieldInfo.settings = settings
+						} catch (e) {
+							//TODO handle the exception
+						}
+					}
+				}
+				fieldInfo.srvInfo = {
+					tableName: item.table_name,
+					appNo: item.table_name.substring(item.table_name.indexOf("bx") + 2, item.table_name.indexOf("_"))
+				}
+			} else if (item.col_type === "Enum" || item.col_type === "Dict") {
+				fieldInfo.type = "radioFk"
+				fieldInfo.options = item.option_list_v2
+			} else if (item.col_type === "Set") {
+				fieldInfo.type = "checkboxFk"
+				fieldInfo.options = item.option_list_v2
+			} else if (item.col_type === "MultilineText") {
+				// fieldInfo.type = "textarea"
+				fieldInfo.type = "input"
+			} else if (item.col_type === "Money" || item.col_type === "Float") {
+				fieldInfo.type = "digit"
+			} else if (item.col_type === "Integer" || item.col_type === "int") {
+				fieldInfo.type = "number"
+			} else if (item.bx_col_type === "fk" && item.col_type !== "User") {
+				fieldInfo.type = "treeSelector"
+				if (item.columns === 'area_id') {
+					fieldInfo.type = "cascader"
+					if (fieldInfo.option_list_v2) {
+						fieldInfo.srvInfo = fieldInfo.option_list_v2
+						fieldInfo.showText = ''
+					} else {
+						fieldInfo.srvInfo = {
+							serviceName: 'srvconfig_area_adj_select',
+							appNo: 'config',
+							isTree: true,
+							column: 'path_name',
+							showCol: 'path_name', //要展示的字段
+						}
+					}
+				}
+			} else if (item.col_type === "User") {
+				fieldInfo.type = "treeSelector"
+				fieldInfo.option_list_v2 = {
+					"refed_col": "user_no",
+					"srv_app": "sso",
+					"serviceName": "srvsso_user_select",
+					"key_disp_col": "user_disp"
+				}
+				fieldInfo.srvInfo = {
+					serviceName: 'srvsso_user_select',
+					appNo: 'sso',
+					isTree: false,
+					column: 'user_no',
+					showCol: 'real_name', //要展示的字段
+				}
+			} else if (item.col_type === 'fk' && item.bx_col_type === 'string' && fieldInfo.option_list_v2) {
+				fieldInfo.srvInfo = fieldInfo.option_list_v2
+				fieldInfo.showText = ''
+				fieldInfo.type = "treeSelector"
+			} else {
+				fieldInfo.type = item.col_type
+			}
+			if (item.more_config) {
+				let config = JSON.parse(item.more_config)
+				if (config.dataType === 'area-tree') {
+					fieldInfo.type = "cascader"
+					fieldInfo.srvInfo = {
+						serviceName: 'srvconfig_area_adj_select',
+						appNo: 'config',
+						isTree: true,
+						column: 'path_name',
+						showCol: 'path_name', //要展示的字段
+					}
+					if (config.column) {
+						fieldInfo.srvInfo.column = config.column
+					}
+					if (config.parent_no) {
+						fieldInfo.srvInfo.parent_no = config.parent_no
+					}
+				}
+			}
+			switch (useType) {
+				case "add":
+					fieldInfo.showExp = (item.in_add === 1)
+					fieldInfo.display = (item.in_add === 1)
+					fieldInfo.in_add = item.in_add
+					break;
+				case "update":
+					fieldInfo.showExp = (item.in_update === 1)
+					fieldInfo.display = (item.in_update === 1)
+					fieldInfo.in_update = item.in_update
+					break;
+				case "list":
+					fieldInfo.showExp = (item.in_list === 1)
+					fieldInfo.display = (item.in_list === 1)
+					break;
+				case "detail":
+					fieldInfo.showExp = (item.in_detail === 1)
+					fieldInfo.display = (item.in_detail === 1)
+					break;
+				case "proclist":
+					fieldInfo.showExp = (item.in_list === 1)
+					fieldInfo.display = (item.in_list === 1)
+					break;
+				case "cond":
+					break;
+				default:
+					break;
+			}
+			// 处理字段统一属性
+			fieldInfo.disabled = item.updatable === 0 ? true : false; //字段是否冻结
+			if (item.updatable === 0 && item.updatable_add === 1 && useType === 'add') {
+				fieldInfo.disabled = false
+			}
+			fieldInfo._validators = Vue.prototype.getValidators(item.validators, item.validators_message)
+			fieldInfo._validator_obj = Vue.prototype.getValidators(item.validators, item.validators_message)
+			fieldInfo.isRequire = fieldInfo._validators.required
+			fieldInfo.value = null //初始化value
+			fieldInfo._colDatas = item //保存原始data
+			if (item.more_config && typeof item.more_config == "string") {
+				try {
+					let moreConfig = JSON.parse(item.more_config)
+					fieldInfo.moreConfig = moreConfig
+					if (moreConfig.formulaShow) {
+						fieldInfo.formulaShow = moreConfig.formulaShow
+					}
+					if (moreConfig.calcAttr) {
+						fieldInfo.calcAttr = moreConfig.calcAttr
+					}
+				} catch (e) {
+					console.error(e)
+				}
+			}
+			if (item.init_expr) {
+				item.init_expr = item.init_expr.replace(/\'/ig, '')
+				fieldInfo.defaultValue = item.init_expr
+				if (item.col_type === 'Enum' || item.col_type === 'Dict') {
+					fieldInfo.value = fieldInfo.defaultValue
+				}
+			}
+			return fieldInfo
+		})
+		return cols
+	}
+	/** 封装按钮的配置信息
+	 * @param {String} buttons  按钮数据
+	 * 
+	 */
+	Vue.prototype.getButtonInfo = function(buttons, pageType) {
+
+		let cols = buttons
+		let buttonInfo = {}
+		cols = cols.filter((item, index) => {
+			switch (pageType) {
+				case "treelist":
+					if ((item.button_type === "addchild" || item.button_type === "edit" || item.button_type === "delete" ||
+							item.button_type === "add") && item.permission) {
+						return item
+					}
+					break;
+				case "list":
+					if ((item.button_type === "addchild" || item.button_type === "edit" || item.button_type === "delete" ||
+							item.button_type === "add") && item.permission) {
+						return item
+					}
+					break;
+				case "add":
+					if ((item.button_type === "reset" || item.button_type === "submit") && item.permission) {
+						return item
+					}
+					break;
+				case "update":
+					if ((item.button_type === "reset" || item.button_type === "edit") && item.permission) {
+						return item
+					}
+					break;
+				case "detail":
+					if ((item.button_type === "customize") && item.permission) {
+						if (item.operate_params && typeof item.operate_params === 'string') {
+							try {
+								item.operate_params = JSON.parse(item.operate_params)
+							} catch (e) {
+								console.warn(e)
+								//TODO handle the exception
+							}
+							return item
+						}
+					}
+					break;
+				default:
+					break;
+			}
+
+			// if( item.button_type === "submit"){
+			// 	buttonInfo.ontap = Vue.prototype.onRequest
+			// }
+
+		})
+		return cols
+	}
+	/**
+	 * 树形数据封装
+	 */
+	Vue.prototype.treeReform = function(e, pidcol, idcol) {
+		// 
+		let data = Vue.prototype.deepClone(e)
+		let to1Data = e.filter((item, index) => {
+			return item[pidcol] === null || item[pidcol] === ""
+		})
+		let to2Data = e.filter((item, index) => {
+			return item[pidcol] !== null || item[pidcol] === ""
+		})
+		let reform = function(allData, pd, id, data) {
+			// 根据顶级节点组装数有子节点
+			let datas = Vue.prototype.deepClone(data) // 当前级别
+			let aDatas = Vue.prototype.deepClone(allData) // 剩余data
+			for (let i = 0; i < datas.length; i++) {
+				let child = []
+				for (let j = 0; j < aDatas.length; j++) {
+					if (datas[i][id] === aDatas[j][pd]) {
+						child.push(aDatas[j])
+						aDatas.slice(j, 1)
+					}
+				}
+				if (child.length > 0) {
+					datas[i]["_childNode"] = reform(aDatas, pd, id, child)
+				} else {
+					datas[i]["_childNode"] = child
+				}
+			}
+			return datas
+		}
+		to1Data = reform(to2Data, pidcol, idcol, to1Data)
+		return to1Data
+	}
+	/**
+	 * 普通请求方法封装
+	 * @param {String} optionType -操作类型(select||operate||add...)
+	 * @param {String} srv -服务名 serviceName
+	 * @param {Object} req -请求参数
+	 * @param {String} app 
+	 */
+	Vue.prototype.onRequest = async function(optionType, srv, req, app) {
+		let self = this
+		let reqType = optionType
+		if (optionType === "add" || optionType === "update") {
+			reqType = optionType
+		} else if (optionType === "select") {
+
+		}
+		let url = Vue.prototype.getServiceUrl(app || uni.getStorageSync("activeApp"), srv, optionType)
+		return self.$http.post(url, req)
+	}
+	/**
+	 * 封装配置的校验信息
+	 *  @param {String} vds - col 配置的 validators
+	 *  @param {String} msg - col 配置的 validators_message
+	 */
+	Vue.prototype.getValidators = function(vds, msg) { // 获取校验信息返回组件data
+		if (vds !== null && msg !== null) {
+			let str = vds
+			console.log('vds', vds)
+			let getStr = function(val, state, end) {
+				if (val.length > state.length + end.length) {
+					let s = val.indexOf(state)
+					if (s === -1) {
+						return ''
+					} else {
+						let nval = val.slice(s + state.length, val.length)
+						let e = nval.indexOf(end)
+						let str = nval.slice(0, e)
+						if (e === -1) {
+							str = nval.slice(0)
+						}
+						return str
+					}
+				} else {
+					return ''
+				}
+			}
+			let Validators = {}
+			let reg = /required/gi
+			Validators['max'] = getStr(str, 'ngMaxlength=', ';').length > 0 ? parseInt(getStr(str, 'ngMaxlength=', ';')) :
+				null
+			Validators['min'] = getStr(str, 'ngMinlength=', ';').length > 0 ? parseInt(getStr(str, 'ngMinlength=', ';')) :
+				null
+			Validators['reg'] = getStr(str, 'ngPattern=', ';')
+			Validators['required'] = reg.test(str)
+			Validators['msg'] = getStr(msg, 'ngPattern=', ';')
+			Validators['isType'] = function(e) {
+				let reg = new RegExp(getStr(str, 'ngPattern=', ';'))
+				if (reg.test(e)) {
+					let obj = {
+						valid: reg.test(e),
+						msg: "有效"
+					}
+					return obj
+				} else {
+					let msgs = getStr(msg, 'ngPattern=', ';')
+					msgs = msgs === '' ? '信息有误' : msgs
+					let obj = {
+						valid: reg.test(e),
+						msg: msgs
+					}
+					return obj
+				}
+			}
+			return Validators
+		} else if (vds && !msg) {
+			let reg = /required/gi
+			let Validators = {}
+			Validators['required'] = reg.test(vds)
+			return Validators
+		} else {
+			return false
+		}
+	}
+	Vue.prototype.isType = function(e) {
+		let reg = new RegExp(getStr(str, 'ngPattern=', ';'))
+		if (reg.test(e)) {
+			let obj = {
+				valid: reg.test(e),
+				msg: "有效"
+			}
+			return obj
+		} else {
+			let msgs = getStr(msg, 'ngPattern=', ';')
+			msgs = msgs === '' ? '信息有误' : msgs
+			let obj = {
+				valid: reg.test(e),
+				msg: msgs
+			}
+			return obj
+		}
+	}
+	Vue.prototype.deepClone = function(obj) {
+		// 深拷贝
+		function isObject(o) {
+			return (typeof o === 'object' || typeof o === 'function') && o !== null
+		}
+		if (!isObject(obj)) {
+			console.log('非对象', obj)
+			throw new Error('非对象', obj)
+		}
+		let isArray = Array.isArray(obj)
+		let newObj = isArray ? [...obj] : { ...obj
+		}
+		Reflect.ownKeys(newObj).forEach(key => {
+			newObj[key] = isObject(obj[key]) ? Vue.prototype.deepClone(obj[key]) : obj[key]
+		})
+		return newObj
+	}
+
 
 	Vue.prototype.verifyLogin = async function(code) {
 			// 小程序、公众号静默登录
