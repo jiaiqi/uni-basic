@@ -214,7 +214,10 @@ export default {
 				return;
 			}
 			if ((num || num === 0) && num > 3) {
-				uni.setStorageSync('realNameInfo', '查询到用户实名信息失败三次及三次以上');
+				uni.setStorageSync('realNameInfo', {
+					sataus: 'fail',
+					msg: `查询到用户实名信息失败三次及三次以上`
+				});
 				return;
 			}
 			let res = await this.$http.post(url, req);
@@ -223,11 +226,17 @@ export default {
 					uni.setStorageSync('realNameInfo', res.data.data[0]);
 					return res.data.data[0];
 				} else {
-					uni.setStorageSync('realNameInfo', '未查询到用户实名信息');
+					uni.setStorageSync('realNameInfo', {
+						sataus: 'fail',
+						msg: '未查询到用户实名信息'
+					});
 					return false;
 				}
 			} else {
-				uni.setStorageSync('realNameInfo', `查询到用户实名信息失败${num}次`);
+				uni.setStorageSync('realNameInfo', {
+					sataus: 'fail',
+					msg: `查询到用户实名信息失败${num}次`
+				});
 				num += 1;
 				this.selectRealNameInfo(num);
 				return false;
