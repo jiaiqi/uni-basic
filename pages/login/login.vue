@@ -59,13 +59,14 @@ export default {
 		if (client_env === 'wxh5') {
 			if (isLogin) {
 				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
+				this.selectRealNameInfo();
 				if (uni.getStorageSync('backUrl') && uni.getStorageSync('backUrl') !== '/') {
-					console.log('即将跳转到backUrl页面')
+					console.log('即将跳转到backUrl页面');
 					uni.redirectTo({
 						url: uni.getStorageSync('backUrl')
 					});
 				} else {
-					console.log('即将跳转到homePath')
+					console.log('即将跳转到homePath');
 					uni.redirectTo({
 						url: this.$api.homePath
 					});
@@ -117,7 +118,7 @@ export default {
 			let burl = uni.getStorageSync('backUrl');
 			this.$http.post(url, req).then(response => {
 				if (response.data.response[0].response.authUrl) {
-					console.log("成功获取回调地址,",response.data.response)
+					console.log('成功获取回调地址,', response.data.response);
 					window.location.href = response.data.response[0].response.authUrl;
 				} else {
 					uni.showToast({
@@ -141,7 +142,7 @@ export default {
 					serviceName: 'srvwx_app_login_verify'
 				}
 			];
-			console.log('saveWxUser请求参数:',req)
+			console.log('saveWxUser请求参数:', req);
 			_this.$http.post(url, req).then(response => {
 				if (response.data.resultCode === 'SUCCESS' && response.data.response[0].response) {
 					console.log('授权成功', response);
@@ -170,7 +171,7 @@ export default {
 					// 获取回调前记录的url 并再回调后 再次进入该url，没有该url时 进入 home
 					let url = uni.getStorageSync('backUrl');
 					console.log('_this.backUrl', _this.backUrl, '===', url);
-					uni.hideLoading();
+					_this.selectRealNameInfo();
 					if (url && url !== '/') {
 						url = _this.getDecodeUrl(url);
 						if (url && url.lastIndexOf('backUrl=') !== -1) {
@@ -195,7 +196,43 @@ export default {
 				}
 			});
 		},
-		
+		async selectRealNameInfo(num = 0) {
+			// 从实名认证信息表中查找当前帐号是否有实名认证信息
+			const url = this.getServiceUrl('spocp', 'srvspocp_user_auth_info_select', 'select');
+			let user_info = uni.getStorageSync('login_user_info');
+			let req = { serviceName: 'srvspocp_user_auth_info_select', colNames: ['*'], condition: [{}], relation_condition: {}, page: { pageNo: 1, rownumber: 10 }, order: [] };
+			if (user_info.user_no) {
+				req.condition = [
+					{
+						colName: 'auth_user_no',
+						value: user_info.user_no,
+						ruleType: 'eq'
+					}
+				];
+			} else {
+				console.warn('未发现当前用户登录信息');
+				return;
+			}
+			if ((num || num === 0) && num > 3) {
+				uni.setStorageSync('realNameInfo', '查询到用户实名信息失败三次及三次以上');
+				return;
+			}
+			let res = await this.$http.post(url, req);
+			if (res.data.state === 'SUCCESS') {
+				if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+					uni.setStorageSync('realNameInfo', res.data.data[0]);
+					return res.data.data[0];
+				} else {
+					uni.setStorageSync('realNameInfo', '未查询到用户实名信息');
+					return false;
+				}
+			} else {
+				uni.setStorageSync('realNameInfo', `查询到用户实名信息失败${num}次`);
+				num += 1;
+				this.selectRealNameInfo(num);
+				return false;
+			}
+		},
 		loginAndAuth(e) {
 			//登录并授权
 			console.log(e);
@@ -231,15 +268,15 @@ export default {
 					uni.setStorageSync('bx_auth_ticket', response.bx_auth_ticket);
 					uni.setStorageSync('expire_time', response.expire_time);
 					uni.setStorageSync('login_user_info', response.login_user_info);
-					let url  = uni.getStorageSync('backUrl')
-					if(url){
+					let url = uni.getStorageSync('backUrl');
+					if (url) {
 						uni.redirectTo({
-							url:url
-						})
-					}else{
+							url: url
+						});
+					} else {
 						uni.redirectTo({
-							url:this.$api.homePath
-						})
+							url: this.$api.homePath
+						});
 					}
 					uni.$emit('loginData', response);
 					// return response;
