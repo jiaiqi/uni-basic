@@ -9,7 +9,7 @@
 		></SitePage>
 		<button type="default" @click="toSomePage"></button>
 		<view class="cu-bar tabbar bg-white shadow foot" v-if="websiteList.length > 1">
-			<view class="action" v-for="(item, siteIndex) in websiteList" :key="siteIndex" @click="changePage(item,siteIndex)">
+			<view class="action" v-for="(item, siteIndex) in websiteList" :key="siteIndex" @click="changePage(item, siteIndex)">
 				<view class="cuIcon-cu-image" v-if="item.page_name == '首页' && item.page_no !== currentPage.page_no"><image src="/static/img/home.png"></image></view>
 				<view class="cuIcon-cu-image" v-if="item.page_name == '首页' && item.page_no === currentPage.page_no">
 					<image style="width: 25px;height: 25px;margin-bottom: 2px;" src="/static/img/home_active.png"></image>
@@ -33,7 +33,7 @@ export default {
 		return {
 			website_no: '',
 			currentPage: {},
-			siteIndex:0,
+			siteIndex: 0,
 			websiteList: []
 		};
 	},
@@ -43,22 +43,90 @@ export default {
 				url: e.dest_page
 			});
 		},
-		toSomePage(){
-			window.location.href  ='https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI1NjE2NzE1OA==&scene=124#wechat_redirect'
+		toSomePage() {
+			window.location.href = 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI1NjE2NzE1OA==&scene=124#wechat_redirect';
 		},
-		changePage(item,index) {
-			let websiteList = this.websiteList;
-			websiteList.forEach(wb => {
-				wb.checked = false;
+		getSignature(formData) {
+			let self = this;
+			let linkurl = window.location.href.split('#')[0];
+			let req = {
+				serviceName: 'srvwx_app_signature_select',
+				colNames: ['*'],
+				condition: [
+					{
+						colName: 'app_no',
+						ruleType: 'eq',
+						value: this.$api.appNo.wxh5
+					},
+					{
+						colName: 'page_url',
+						ruleType: 'eq',
+						value: linkurl
+						// value: uni.getStorageSync('linkUrl') ? uni.getStorageSync('linkUrl') : window.location.href.split('#')[0]
+					}
+				]
+			};
+			self.$http.post(self.$api.getSignature, req).then(res => {
+				if (res.data.state === 'SUCCESS') {
+					let resData = res.data.data[0];
+					console.log('getSignature', resData);
+					jweixin.config({
+						debug: false, // 调试阶段建议开启
+						appId: resData.appId, // APPID
+						timestamp: resData.timestamp, // 时间戳timestamp
+						nonceStr: resData.noncestr, // 随机数nonceStr
+						signature: resData.signature, // 签名signature
+						// 需要调用的方法接口
+						jsApiList: ['scanQRCode']
+					});
+					jweixin.ready(() => {});
+					jweixin.error(function(res) {
+						// alert(JSON.stringify(res));
+						console.log(res);
+					});
+				} else {
+				}
 			});
-			this.siteIndex = index
-			item.checked = !item.checked;
-			this.currentPage = item;
-			this.getWebsiteList()
+		},
+		changePage(item, index) {
+			if (item.page_name === '我的') {
+				jweixin.ready(function() {
+					jweixin.checkJsApi({
+						jsApiList: ['scanQRCode'],
+						success: function(res) {
+							console.warn('---------------打开扫一扫---------------',res);
+							jweixin.scanQRCode({
+								needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+								scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
+								success: function(res) {
+									var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+									console.log(result);
+								},
+								error(e){
+									console.error(e)
+								}
+							});
+						},
+						error(e){
+							console.error('checkJsApi失败',e)
+						},
+					});
+				});
+			
+			} else {
+				let websiteList = this.websiteList;
+				websiteList.forEach(wb => {
+					wb.checked = false;
+				});
+				this.siteIndex = index;
+				item.checked = !item.checked;
+				this.currentPage = item;
+				this.getWebsiteList();
+			}
 		},
 		async getWebsiteList() {
 			const _this = this;
-			let siteIndex = this.siteIndex
+			let siteIndex = this.siteIndex;
 			const url = this.getServiceUrl('daq', 'srvdaq_website_page_select', 'select');
 			let website_no = this.website_no;
 			if (website_no) {
@@ -118,6 +186,7 @@ export default {
 		if (option.website_no) {
 			this.website_no = option.website_no;
 		}
+		this.getSignature()
 	},
 	onShareAppMessage(res) {}
 };

@@ -1,6 +1,6 @@
 <template>
 	<view>
-		<bx-list class="bx-list"></bx-list>
+		<bx-list class="bx-list" :list="listData"></bx-list>
 	</view>
 </template>
 
@@ -8,7 +8,7 @@
 	export default {
 		data() {
 			return {
-				
+				listData:[]
 			}
 		},
 		methods: {

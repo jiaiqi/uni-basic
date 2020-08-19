@@ -16,43 +16,6 @@
 					:moreConfig="colsV2Data && colsV2Data.more_config ? colsV2Data.more_config : null"
 				></bxform>
 				<bxButtons :buttons="buttons" class="button-box" @on-button-change="onButton($event)" v-if="buttons && buttons.length > 0 && formDisabled != true"></bxButtons>
-				<view class="sublist-content" v-if="type === 'detail' && childService && childService.length > 0">
-					<view class="sublist-box" v-if="showSublist">
-						<view class="child-service" v-for="item in childService" :key="item.service_name">
-							<view
-								class="bg-blue service"
-								v-if="item.foreign_key && item.foreign_key.section_name"
-								:class="{
-									'bg-gray':
-										item.foreign_key &&
-										item.foreign_key.more_config &&
-										item.foreign_key.more_config.statusColor &&
-										item.foreign_key.more_config.statusColor.noStart &&
-										item.childData &&
-										item.childData.data &&
-										item.childData.data &&
-										item.childData.data.length === 0
-								}"
-								@click="toChildList(item)"
-							>
-								<!-- 标题 -->
-								<text class="section_name">{{ item.foreign_key.section_name }}</text>
-								<!-- 内容 -->
-								<text class="section_content" v-if="item.data && item.foreign_key.more_config && item.foreign_key.more_config.resultCol">
-									{{ item.data[item.foreign_key.more_config.resultCol] }}
-								</text>
-								<text
-									class="section_content"
-									v-if="!item.data || (item.data && item.foreign_key.more_config && !item.foreign_key.more_config.resultCol && !item.data[item.foreign_key.more_config.resultCol])"
-								>
-									未填写
-								</text>
-								<!-- 结论 -->
-								<text class="section_verdict"></text>
-							</view>
-						</view>
-					</view>
-				</view>
 			</view>
 		</view>
 	</view>
@@ -108,7 +71,7 @@ export default {
 				biz_path: '/syscore/',
 				application: 'spocp',
 				is_public: true,
-				service_name: 'srvspocp_user_real_name_auth',
+				service_name: 'srvspocp_merchant_add',
 				id: 18,
 				page_area: '底部按钮',
 				seq: 100
@@ -175,7 +138,7 @@ export default {
 		}
 	},
 	onLoad() {
-		this.serviceName = 'srvspocp_user_real_name_auth';
+		this.serviceName = 'srvspocp_merchant_user_reg';
 		this.type = 'add';
 		this.getFieldsV2(this.condition);
 	},
@@ -293,7 +256,7 @@ export default {
 			if (this.formDisabled) {
 				type = 'detail';
 			}
-			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, app);
+			let colVs = await this.getServiceV2(this.serviceName, 'reg', type ? type : this.type, app);
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}
@@ -395,6 +358,24 @@ export default {
 							item.disabled = true;
 							item.value = uni.getStorageSync('login_user_info').user_no;
 						}
+						if (item.column === 'merchant_name') {
+							item.type = 'treeSelector';
+							item.srvInfo = {
+								serviceName: 'srvspocp_merchant_name_select',
+								appNo: 'spocp',
+								isTree: false,
+								column: 'merchant_name',
+								showCol: 'merchant_name' ,//要展示的字段
+								canInput:true
+							};
+							item.option_list_v2 = {
+								refed_col: 'merchant_name',
+								show_as_pair: false,
+								srv_app: 'spocp',
+								serviceName: 'srvspocp_merchant_name_select',
+								key_disp_col: 'merchant_name'
+							};
+						}
 					});
 					break;
 				case 'detail':
@@ -436,34 +417,30 @@ export default {
 								req[item] = req[item].toString();
 							}
 						});
-						req = [{ serviceName: e.service_name, data: [req] }];
+						req = [{ serviceName: 'srvspocp_merchant_user_reg', data: [req] }];
 						let app = uni.getStorageSync('activeApp');
-						let url = this.getServiceUrl(app, e.service_name, 'add');
-						if (e.serviceName === 'srvspocp_user_real_name_auth') {
-							url = this.getServiceUrl(app, e.service_name, 'operate');
-						}
-						console.log(url, e);
+						let url = this.getServiceUrl(app, 'srvspocp_merchant_user_reg', 'operate');
 						let res = await this.$http.post(url, req);
 						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
 								title: '提示',
-								content: '登记成功,是否返回首页',
-								confirmText:"是",
-								cancelText:"成为商家",
+								content: '提交成功,即将返回首页',
+								showCancel: false,
 								success(res) {
 									if (res.confirm) {
 										uni.reLaunch({
 											url: _this.$api.homePath
 										});
-									}else{
-										uni.redirectTo({
-											url:'/pages/specific/marchantReg/marchantReg'
-										})
-										console.log("跳转到商家登记页面")
+									} else {
 									}
 								}
 							});
+						}else{
+							uni.showToast({
+								title:res.data.resultMessage,
+								icon:'none'
+							})
 						}
 					}
 					break;
@@ -541,11 +518,12 @@ export default {
 	}
 }
 .articles {
-	background-color: #c4e5ff !important;
+	// background-color: #c4e5ff !important;
 	.cu-item {
 		opacity: 0;
+		margin: 0;
 		.button-box {
-			uni-view{
+			uni-view {
 				flex: 1;
 			}
 			/deep/ .cu-btn {

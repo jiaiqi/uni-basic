@@ -218,7 +218,7 @@ export default {
       overflow: scroll;
       z-index: 9999;
       .list-item {
-        width: 50%;
+        min-width: 50%;
         text-overflow: ellipsis;
         .label {
           border: none;

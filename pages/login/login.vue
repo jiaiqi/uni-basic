@@ -59,18 +59,20 @@ export default {
 		if (client_env === 'wxh5') {
 			if (isLogin) {
 				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
-				this.selectRealNameInfo();
-				if (uni.getStorageSync('backUrl') && uni.getStorageSync('backUrl') !== '/') {
-					console.log('即将跳转到backUrl页面');
-					uni.redirectTo({
-						url: uni.getStorageSync('backUrl')
-					});
-				} else {
-					console.log('即将跳转到homePath');
-					uni.redirectTo({
-						url: this.$api.homePath
-					});
-				}
+				let backUrl = uni.getStorageSync('backUrl');
+				this.selectRealNameInfo().then(res => {
+					if (backUrl && backUrl !== '/' && backUrl !== '/ymt/') {
+						console.log('即将跳转到backUrl页面', backUrl);
+						uni.redirectTo({
+							url: backUrl
+						});
+					} else {
+						console.log('即将跳转到homePath');
+						uni.redirectTo({
+							url: this.$api.homePath
+						});
+					}
+				});
 			} else {
 				console.log('未登录，进行初始化授权', uni.getStorageSync('isLogin'));
 				this.wxh5Auth();
@@ -170,7 +172,7 @@ export default {
 					}
 					// 获取回调前记录的url 并再回调后 再次进入该url，没有该url时 进入 home
 					let url = uni.getStorageSync('backUrl');
-					console.log('_this.backUrl', _this.backUrl, '===', url);
+					console.log('_this.backUrl', '===', url);
 					_this.selectRealNameInfo();
 					if (url && url !== '/') {
 						url = _this.getDecodeUrl(url);
@@ -198,9 +200,9 @@ export default {
 		},
 		async selectRealNameInfo(num = 0) {
 			// 从实名认证信息表中查找当前帐号是否有实名认证信息
-			const url = this.getServiceUrl('spocp', 'srvspocp_user_auth_info_select', 'select');
+			const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
 			let user_info = uni.getStorageSync('login_user_info');
-			let req = { serviceName: 'srvspocp_user_auth_info_select', colNames: ['*'], condition: [{}], relation_condition: {}, page: { pageNo: 1, rownumber: 10 }, order: [] };
+			let req = { serviceName: 'srvspocp_auth_personal_info_select', colNames: ['*'], condition: [{}], page: { pageNo: 1, rownumber: 10 }, order: [] };
 			if (user_info.user_no) {
 				req.condition = [
 					{
@@ -223,14 +225,28 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS') {
 				if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
-					uni.setStorageSync('realNameInfo', res.data.data[0]);
+					uni.setStorageSync('realNameInfo', {
+						status: 'success',
+						data: res.data.data[0]
+					});
+					console.log('用户信息:', res.data.data[0]);
 					return res.data.data[0];
 				} else {
 					uni.setStorageSync('realNameInfo', {
 						sataus: 'fail',
 						msg: '未查询到用户实名信息'
 					});
-					return false;
+					uni.showModal({
+						title: '提示',
+						content: '未发现当前登录用户实名认证信息,点击确定跳转到实名认证页面',
+						success(res) {
+							if (res.confirm) {
+								uni.redirectTo({
+									url: '/pages/specific/addInfo/addInfo'
+								});
+							}
+						}
+					});
 				}
 			} else {
 				uni.setStorageSync('realNameInfo', {
@@ -239,7 +255,10 @@ export default {
 				});
 				num += 1;
 				this.selectRealNameInfo(num);
-				return false;
+				uni.showToast({
+					title: res.data.resultMessage,
+					icon: 'none'
+				});
 			}
 		},
 		loginAndAuth(e) {
@@ -253,6 +272,7 @@ export default {
 		},
 		async accountLogin(user) {
 			// 账号登录
+			let _this = this;
 			uni.hideKeyboard(); //隐藏软键盘
 			console.log('srvuser_login', user);
 			if (Object.values(user).length < 2) {
@@ -271,24 +291,32 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS' && res.data.response) {
 				// 登录成功
+				uni.setStorageSync('isLogin', true);
 				if (Array.isArray(res.data.response) && res.data.response.length > 0) {
 					let response = res.data.response[0].response;
 					console.log(response);
 					uni.setStorageSync('bx_auth_ticket', response.bx_auth_ticket);
 					uni.setStorageSync('expire_time', response.expire_time);
 					uni.setStorageSync('login_user_info', response.login_user_info);
-					let url = uni.getStorageSync('backUrl');
-					if (url) {
-						uni.redirectTo({
-							url: url
-						});
-					} else {
-						uni.redirectTo({
-							url: this.$api.homePath
-						});
-					}
 					uni.$emit('loginData', response);
 					// return response;
+				}
+				let backUrl = uni.getStorageSync('backUrl');
+				console.log(backUrl, 'backUrl');
+				if (backUrl) {
+					uni.navigateTo({
+						url: backUrl
+					})
+					// uni.reLaunch({
+					// 	url: backUrl
+					// });
+				} else {
+					uni.navigateTo({
+						url: _this.$api.homePath
+					})
+					// uni.reLaunch({
+					// 	url: _this.$api.homePath
+					// });
 				}
 			}
 		},

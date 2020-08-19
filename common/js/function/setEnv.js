@@ -22,6 +22,8 @@ function setEnv() {
 	const isWeixin = isWeixinClient();
 	console.log('isWeixin', isWeixin);
 	client_env = isWeixin ? 'wxh5' : 'web';
+	var jweixin = require('jweixin-module');
+	window.jweixin = jweixin
 	// #endif
 	// #ifdef MP-WEIXIN
 	client_env = 'wxmp';

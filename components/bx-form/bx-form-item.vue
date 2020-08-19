@@ -314,7 +314,31 @@
 		</view>
 		<view class="cu-modal bottom-modal" :class="{ show: showTreeSelector }">
 			<view class="cu-dialog tree-selector">
+				<!-- <u-search
+					@search="searchWithKeyword"
+					@custom="searchWithKeyword"
+					placeholder="输入关键词进行搜索"
+					v-model="keyword"
+					:clearabled="true"
+					shape="square"
+					:show-action="true"
+					action-text="搜索"
+					:animation="true"
+				></u-search> -->
+				<u-search
+					@search="searchWithKeyword"
+					@custom="searchWithKeyword"
+					placeholder="输入关键词进行搜索"
+					v-model="keyword"
+					:clearabled="true"
+					shape="square"
+					:show-action="true"
+					:action-text="'搜索'"
+					:animation="true"
+				></u-search>
+				<!-- canInput -->
 				<bxTreeSelector
+					class="bx-selector-wrap"
 					:srvInfo="isArray(fieldData.option_list_v2) ? null : fieldData.option_list_v2"
 					:treeData="treeSelectorData"
 					:childNodeCol="'_childNode'"
@@ -323,7 +347,10 @@
 					@clickParentNode="onTreeGridChange"
 					@clickLastNode="onMenu"
 				></bxTreeSelector>
-				<view class="dialog-button"><view class="cu-btn bg-blue shadow" @tap="showTreeSelector = false">取消</view></view>
+				<view class="dialog-button">
+					<view class="cu-btn bg-blue shadow round margin-right" @tap="useKeywords">确定</view>
+					<view class="cu-btn bg-gray shadow round" @tap="showTreeSelector = false">取消</view>
+				</view>
 			</view>
 		</view>
 		<uni-popup ref="popup" type="bottom" @change="changePopup">
@@ -442,7 +469,9 @@ export default {
 			calcRule: {
 				//计算规则
 			},
-			videoList: []
+			videoList: [],
+			keyword: '', //tree-selector的搜索关键词
+			treeSelectorPage: { pageNo: 1, rownumber: 20, total: 0 }
 		};
 	},
 	updated() {},
@@ -575,6 +604,56 @@ export default {
 		this.getDefVal();
 	},
 	methods: {
+		useKeywords() {
+			let keyword = this.keyword;
+			this.showTreeSelector = false;
+			if(keyword){
+				this.fieldData.value = keyword;
+				this.onInputBlur();
+				this.$emit('on-value-change', this.fieldData);
+				this.treeSelectorShowValue = this.fieldData.value;
+			}
+			this.getValid();
+		},
+		async searchWithKeyword() {
+			let keyword = this.keyword;
+			let option = this.deepClone(this.fieldData.option_list_v2);
+			let relation_condition = {
+				relation: 'OR',
+				data: [
+					{
+						relation: 'AND',
+						data: [
+							{
+								colName: option.key_disp_col,
+								value: keyword,
+								ruleType: '[like]'
+							}
+						]
+					},
+					{
+						relation: 'AND',
+						data: [
+							{
+								colName: option.refed_col,
+								value: keyword,
+								ruleType: '[like]'
+							}
+						]
+					}
+				]
+			};
+			let url = this.getServiceUrl(option.srv_app, option.serviceName, 'select');
+			let req = {
+				serviceName: option.serviceName,
+				queryMethod: 'select',
+				distinct: false,
+				colNames: ['*'],
+				page: { pageNo: 1, rownumber: 20 },
+				relation_condition: relation_condition
+			};
+			this.getTreeSelectorData(null, option.serviceName, req);
+		},
 		successvideo(e) {
 			console.log(e);
 		},
@@ -743,8 +822,36 @@ export default {
 			if (this.fieldData.value !== '' && this.fieldData.value !== null && this.fieldData.value !== undefined) {
 				this.formData['file_no'] = this.fieldData.value;
 			}
+			if (this.fieldData.moreConfig && this.fieldData.moreConfig.fieldType === 'id_photo' && res.file_no) {
+				this.toOCR(res.file_no);
+			}
 			this.onInputChange();
 			this.getDefVal();
+		},
+		async toOCR(file_no) {
+			// ocr识别身份证信息
+			// let _this = this;
+			// const reqUrl = _this.getServiceUrl('daq', 'srvdaq_orc_text_extraction', 'operate');
+			// const reqData = [
+			// 	{
+			// 		serviceName: 'srvdaq_orc_text_extraction',
+			// 		data: [
+			// 			{
+			// 				file_no: file_no
+			// 			}
+			// 		]
+			// 	}
+			// ];
+			// let res = await _this.$http.post(reqUrl, reqData);
+			// // 得到识别的文字
+			// if (response.data.state === 'SUCCESS') {
+			// 	const resp = response.data.response[0].response;
+			// 	console.log(response.data.response);
+			// 	this.$emit("ocrInfo",resp)
+			// } else {
+			// 	console.log(response.data.resultMessage);
+			// }
+			this.$emit('ocrInfo', '');
 		},
 		onButtons(e, b) {
 			let item = e;
@@ -931,9 +1038,15 @@ export default {
 		},
 		onMenu(e) {
 			const data = e.item ? e.item : {};
-			this.fieldData.value = this.fieldData.option_list_v2 && this.fieldData.option_list_v2['refed_col'] ? data[this.fieldData.option_list_v2['refed_col']] : data.no;
+			this.fieldData.value =
+				this.fieldData.option_list_v2 && this.fieldData.option_list_v2['refed_col']
+					? data[this.fieldData.option_list_v2['refed_col']]
+					: data.no
+					? data.no
+					: typeof e === 'string'
+					? e
+					: '';
 			this.fieldData['colData'] = data;
-			// this.$refs.treePopup.close();
 			this.showTreeSelector = false;
 			this.onInputBlur();
 			this.$emit('on-value-change', this.fieldData);
@@ -987,7 +1100,13 @@ export default {
 				self.fieldData.colData = res.data.data[0];
 			}
 		},
-		async getTreeSelectorData(cond, serv) {
+
+		async getTreeSelectorData(cond, serv, requestOption) {
+			/**
+			 * @param {Object} cond -conditon 过滤条件
+			 * @param {Object} serv -serviceName 服务名
+			 * @param {Object} requestOption - 已经组装好的请求参数
+			 */
 			let self = this;
 			let req = {
 				serviceName: serv ? serv : self.fieldData.option_list_v2 ? self.fieldData.option_list_v2.serviceName : '',
@@ -1037,14 +1156,18 @@ export default {
 				}
 			}
 			if (req.serviceName === 'srvsso_user_select') {
-				req.condition = [{ colName: 'dept_no', ruleType: 'like', value: 'bx100sys' }];
+				// req.condition = [{ colName: 'dept_no', ruleType: 'like', value: 'bx100sys' }];
 				appName = 'sso';
 			}
 			console.log(this.fieldData);
 			let option_list_v2 = this.fieldData.option_list_v2;
+			if (requestOption) {
+				req = this.deepClone(requestOption);
+			}
 			if (option_list_v2.is_tree === true) {
 				req['treeData'] = true;
 			}
+			req.page = this.treeSelectorPage;
 			let res = await self.onRequest('select', req.serviceName, req, appName);
 			if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
 				let hasParentNo = res.data.data.filter(item => item.parent_no).length;
@@ -1123,7 +1246,7 @@ export default {
 	line-height: 2.4em;
 	min-height: 2.4em;
 }
-.bx-form-item{
+.bx-form-item {
 	flex: 1;
 }
 .content {
@@ -1133,15 +1256,16 @@ export default {
 	align-items: center;
 	justify-content: flex-start;
 }
-.itemwrap{
+.itemwrap {
 	flex-direction: column;
 	align-items: flex-start;
 }
 .form-content {
 	width: 100%;
-	.content,.item-group {
+	.content,
+	.item-group {
 		padding: 10rpx;
-		border: 1px solid #F1F1F1;
+		border: 1px solid #f1f1f1;
 	}
 	radio-group {
 		width: 100%;
@@ -1310,7 +1434,6 @@ uni-text.input-icon {
 .cu-card.article > .cu-item .title {
 	line-height: normal;
 }
-.cu-dialog.tree-selector,
 .cu-dialog.rich-text {
 	height: auto;
 	padding-top: 50rpx;
@@ -1323,6 +1446,19 @@ uni-text.input-icon {
 		height: 100upx;
 		align-items: center;
 		// padding-right: 50upx;
+	}
+}
+.tree-selector {
+	background-color: #fff;
+	z-index: 99;
+	padding: 10rpx 20rpx 20rpx;
+	.u-search {
+		padding: 0 20rpx;
+	}
+	.bx-selector-wrap {
+		max-height: 60vh;
+		min-height: 50vh;
+		overflow-y: scroll;
 	}
 }
 .pickers {

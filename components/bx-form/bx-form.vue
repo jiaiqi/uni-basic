@@ -24,12 +24,34 @@
 				@on-form-item="onItemButtons($event)"
 				@on-value-change="onValChange($event)"
 				@on-value-blur="onValBlur($event)"
-				@toPage = "toPage"
+				@toPage="toPage"
 				@get-cascader-val="getCascaderVal"
 				@picker-change="pickerchange"
 				@getRedundantData="getRedundantData"
+				@ocrInfo="getOcrInfo"
 			></formItem>
 		</view>
+		<uni-popup type="bottom" ref="ocrPopup">
+			<view class="ocr-info">
+				<view class="title">识别到您的身份证信息如下:</view>
+				<u-form :model="ocrInfo" ref="uForm" label-width="200">
+					<u-form-item label="姓名"><u-input v-model="ocrInfo.name" /></u-form-item>
+					<u-form-item label="性别">
+						<u-radio-group v-model="ocrInfo.sex">
+							<u-radio v-for="(item, index) in sexList" :key="index" :name="item.label">{{ item.label }}</u-radio>
+						</u-radio-group>
+						<!-- <u-input v-model="ocrInfo.sex"/> -->
+					</u-form-item>
+					<u-form-item label="身份证号"><u-input v-model="ocrInfo.idNo" /></u-form-item>
+					<u-form-item label="住址"><u-input v-model="ocrInfo.address" /></u-form-item>
+				</u-form>
+				<view class="warn-text">是否使用以上信息覆盖已填写内容？</view>
+				<view class="button-box">
+					<button class="button cu-btn bg-blue" type="primary" @click="coverageInfo(true)">确定</button>
+					<button class="button cu-btn" type="default" @click="hideOcrPopup">算了</button>
+				</view>
+			</view>
+		</uni-popup>
 	</view>
 </template>
 
@@ -37,9 +59,10 @@
 import formItem from '@/components/bx-form/bx-form-item.vue';
 import evaluatorTo from '@/common/js/evaluator.js';
 import calculateTo from '@/common/js/calculate.js';
+import uniPopup from '@/components/uni-popup/uni-popup.vue'
 export default {
 	name: 'bx-form',
-	components: { formItem },
+	components: { formItem,uniPopup },
 	props: {
 		fields: {
 			type: Array,
@@ -108,7 +131,16 @@ export default {
 			oldFieldModel: {},
 			specialCol: [],
 			more_config: {},
-			calcAttr: {}
+			calcAttr: {},
+			ocrInfo: {},
+			sexList: [
+				{
+					label: '男'
+				},
+				{
+					label: '女'
+				}
+			]
 		};
 	},
 	created() {
@@ -129,6 +161,45 @@ export default {
 		}
 	},
 	methods: {
+		getOcrInfo(e) {
+			// 拿到ocr接口返回的数据
+			let ocrInfo = {
+				name: 'ocrName',
+				sex: '男',
+				idNo: 'ocr_card_no',
+				address: 'ocr_address'
+			};
+			this.ocrInfo = ocrInfo;
+			this.$refs.ocrPopup.open();
+		},
+		hideOcrPopup() {
+			// 隐藏ocr弹出框
+			this.$refs.ocrPopup.close();
+		},
+		coverageInfo(dontHide) {
+			// 使用ocr识别出的信息覆盖已填写信息
+			this.allField.forEach(item => {
+				if (item.column === 'name' && this.ocrInfo.name) {
+					item.value = this.ocrInfo.name;
+					this.fieldModel.name = this.ocrInfo.name;
+				}
+				if (item.column === 'sex' && this.ocrInfo.sex) {
+					item.value = this.ocrInfo.sex;
+					this.fieldModel.sex = this.ocrInfo.sex;
+				}
+				if (item.column === 'id_card' && this.ocrInfo.idNo) {
+					item.value = this.ocrInfo.idNo;
+					this.fieldModel.id_card = this.ocrInfo.idNo;
+				}
+				if (item.column === 'address' && this.ocrInfo.address) {
+					item.value = this.ocrInfo.address;
+					this.fieldModel.address = this.ocrInfo.address;
+				}
+			});
+			if (dontHide === true) {
+				this.hideOcrPopup();
+			}
+		},
 		pickerchange(oriData) {
 			console.log('oriData------', oriData, this.allField);
 			let filed = this.allField;
@@ -252,7 +323,14 @@ export default {
 					}
 				}
 			});
-			if (e.bx_col_type === 'fk' && e.colData && typeof e.colData === 'object' && Array.isArray(e.colData) !== true && Object.keys(e.colData).length > 0&&this.BxformType!=='add') {
+			if (
+				e.bx_col_type === 'fk' &&
+				e.colData &&
+				typeof e.colData === 'object' &&
+				Array.isArray(e.colData) !== true &&
+				Object.keys(e.colData).length > 0 &&
+				this.BxformType !== 'add'
+			) {
 				//如果当前值改变的字段是fk类型，遍历所有字段，如果有需要冗余此fk字段数据的字段，则进行冗余
 				this.allField.forEach(item => {
 					if (item.redundant && typeof item.redundant === 'object' && item.redundant.dependField === e.column) {
@@ -277,8 +355,8 @@ export default {
 			this.$emit('changeFieldModel', this.fieldModel);
 			this.$emit('value-blur', e);
 		},
-		toPage(e){
-			this.$emit('toPage',e)
+		toPage(e) {
+			this.$emit('toPage', e);
 		},
 		getDetailfieldModel() {
 			return this.fieldModel;
@@ -337,8 +415,8 @@ export default {
 					icon: 'none'
 				});
 				return {
-					valid:false,
-					fieldData:this.fieldModel
+					valid: false,
+					fieldData: this.fieldModel
 				};
 			}
 		},
@@ -350,7 +428,14 @@ export default {
 			}
 		},
 		getRedundantData(e) {
-			if (e.bx_col_type === 'fk' && e.colData && typeof e.colData === 'object' && Array.isArray(e.colData) !== true && Object.keys(e.colData).length > 0&&this.BxformType!=='add') {
+			if (
+				e.bx_col_type === 'fk' &&
+				e.colData &&
+				typeof e.colData === 'object' &&
+				Array.isArray(e.colData) !== true &&
+				Object.keys(e.colData).length > 0 &&
+				this.BxformType !== 'add'
+			) {
 				// 拿到fk数据，遍历所有字段，如果有需要冗余此fk字段数据的字段，则进行冗余 add时不冗余
 				this.allField.forEach(item => {
 					if (item.redundant && typeof item.redundant === 'object' && item.redundant.dependField === e.column) {
@@ -432,6 +517,24 @@ export default {
 		}
 		&.col2 {
 			grid-column-end: span 2;
+		}
+	}
+}
+.ocr-info {
+	background-color: #fff;
+	padding: 20rpx;
+	.title {
+		padding: 20rpx 0;
+		font-weight: bold;
+	}
+	.warn-text {
+		padding: 20rpx 0 50rpx;
+	}
+	.button-box {
+		display: flex;
+		justify-content: space-between;
+		.button {
+			width: calc(50% - 10rpx);
 		}
 	}
 }

@@ -1,13 +1,21 @@
 <template>
 	<view class="list-wrap">
-		<s-pull-scroll ref="pullScroll" :pullDown="pullDown" :pullUp="loadData">
-			<ul>
-				<li v-for="(item, index) of dataList" :key="index" style="font-size:30rpx;padding:40rpx;text-align:center;border-bottom:1px solid #aaa">{{ item }}</li>
-			</ul>
-
-			<!-- 使用插槽自定义空白布局 -->
-			<div slot="empty">...</div>
-		</s-pull-scroll>
+		<hr-pull-load
+			@refresh="refresh"
+			@loadMore="loadMore"
+			:height="height"
+			:pullHeight="50"
+			:maxHeight="100"
+			:lowerThreshold="20"
+			:bottomTips="bottomTips"
+			:isTab="false"
+			:isAllowPull="true"
+			ref="hrPullLoad"
+		>
+			<view class="list">
+				<view class="item" v-for="(item, index) of exampleInfo" :key="index"><slot name="listItem" :data="item"></slot></view>
+			</view>
+		</hr-pull-load>
 	</view>
 </template>
 
@@ -15,57 +23,136 @@
 export default {
 	data() {
 		return {
-			pageInfo: {
-				total: 100,
-				rownumber: 5,
-				pageNo: 1
-			},
-			dataList: [1, 2, 3, 4, 5, 6, 7],
+			bottomTips: '',
+			exampleInfo: [],
+			currentPage: 1,
+			colsV2Data: {},
+			fields: []
 		};
 	},
 	props: {
 		list: {
 			type: Array,
 			default: () => []
+		},
+		height: {
+			type: Number,
+			default: -1
+		},
+		srvInfo: {
+			type: Object,
+			default: () => {
+				return {
+					serviceName: null,
+					app: null,
+					rownumber: 10
+				};
+			}
 		}
 	},
+	created() {},
+	mounted() {
+		this.getFieldsV2().then(_ => {
+			this.getListData(1);
+		});
+	},
 	methods: {
-		pullDown(pullScroll) {
-			setTimeout(() => {
-				this.loadData(pullScroll);
-			}, 200);
+		async getFieldsV2() {
+			let app = uni.getStorageSync('activeApp');
+			let colVs = await this.getServiceV2('srvspocp_merchant_select', 'list', 'list', this.srvInfo.app);
+			if (!this.navigationBarTitle) {
+				uni.setNavigationBarTitle({
+					title: colVs.service_view_name
+				});
+			}
+			if (colVs.more_config) {
+				if (typeof colVs.more_config === 'string') {
+					try {
+						colVs.more_config = JSON.parse(colVs.more_config);
+					} catch (e) {
+						console.log(e);
+					}
+				}
+			}
+			this.colsV2Data = colVs;
+			this.fields = colVs._fieldInfo;
+			this.$emit('getRowButton',colVs.rowButton)
 		},
-		loadData(pullScroll) {
-			setTimeout(() => {
-				if (pullScroll.page == 1) {
-					this.dataList = [];
+		/*
+		 * 调用接口从后台获取数据，需要注意的是：
+		 * 1.bottomTips用来控制触发加载更多时的底部提示
+		 * 2.this.$refs.hrPullLoad.reSet()用来重置下拉刷新状态
+		 */
+		async getListData(type) {
+			let _this = this;
+			if (!this.srvInfo.serviceName || !this.srvInfo.app) {
+				uni.showToast({
+					title: 'serviceName参数错误,' + this.srvInfo.serviceName,
+					icon: 'none'
+				});
+				// this.bottomTips = 'more';
+			}
+			let url = this.getServiceUrl(this.srvInfo.app, this.srvInfo.serviceName, 'select');
+			let req = {
+				serviceName: this.srvInfo.serviceName,
+				colNames: ['*'],
+				page: {
+					pageNo: this.currentPage,
+					rownumber: this.srvInfo.rownumber
 				}
-				const curList = [];
-				for (let i = this.dataList.length; i < this.dataList.length + 20; i++) {
-					curList.push(i);
-				}
-				this.dataList = this.dataList.concat(curList);
-				if (this.dataList.length > 60) {
-					pullScroll.finish();
+			};
+			let res = await this.$http.post(url, req);
+			if (res.data.state === 'SUCCESS') {
+				let data = res.data.data;
+				this.fields.forEach(field => {
+					data.forEach(item => {
+						Object.keys(item).forEach(key => {
+							if (field.column === key) {
+								item[key] = {
+									label: field.label,
+									value: item[key]
+								};
+							}
+						});
+					});
+				});
+				/* 拿到数据后的处理 */
+				if (data.length > 0) {
+					if (type == 1) {
+						this.exampleInfo = data;
+					} else if (type == 2) {
+						this.exampleInfo = this.exampleInfo.concat(data);
+					}
+					// nomore’：没有更多数据了；‘loading’：加载中...；‘more’：上拉加载更多；
+					if (data.length < this.srvInfo.rownumber) {
+						this.bottomTips = 'nomore';
+					} else {
+						this.bottomTips = 'more';
+					}
 				} else {
-					pullScroll.success();
+					if (type == 1) {
+						this.exampleInfo = [];
+					} else if (type == 2) {
+						this.currentPage--;
+					}
+					this.bottomTips = 'nomore';
 				}
-			}, 500);
+				setTimeout(() => {
+					/* 这里300毫秒的延时，主要是为了优化视觉效果 */
+					this.$refs.hrPullLoad.reSet();
+				}, 300);
+			}
 		},
-		// 上划加载更多
+		//自定义上拉加载更多
 		loadMore() {
-			// 请求新数据完成后调用 组件内loadOver()方法
-			// 注意更新当前页码
-			console.log('loadMore');
-			this.dataList.concat(['a', 'b', 'c']);
-			// this.$refs.loadRefresh.loadOver();
+			this.currentPage++;
+			this.bottomTips = 'loading';
+			this.getListData(2);
 		},
-		// 下拉刷新数据列表
+		//自定义下拉刷新
 		refresh() {
-			this.$nextTick(() => {
-				this.$refs.pullScroll.refresh();
-			});
-			console.log('refresh');
+			this.currentPage = 1;
+			this.getListData(1);
 		}
 	}
 };

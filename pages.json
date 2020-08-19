@@ -37,14 +37,21 @@
 		}, {
 			"path": "pages/public/proc/detail/detail",
 			"style": {}
+		}, {
+			"path": "pages/specific/addInfo/addInfo",
+			"style": {}
+		}, {
+			"path": "pages/specific/marchantReg/marchantReg",
+			"style": {}
+		}, {
+			"path": "pages/specific/marchantList/marchantList",
+			"style": {
+				"navigationBarTitleText": "员工信息"
+			}
 		}
-	    ,{
-            "path" : "pages/specific/addInfo/addInfo",
-            "style" : {}
-        }
-    ],
+	],
 	"globalStyle": {
-		"navigationStyle":"custom",
+		"navigationStyle": "custom",
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "uni-basic",
 		"navigationBarBackgroundColor": "#1abc9c",

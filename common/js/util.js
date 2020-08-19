@@ -12,6 +12,7 @@ const install = (Vue, options) => {
 	Vue.prototype.isArray = (e) => {
 		return Array.isArray(e)
 	}
+	// url解码
 	Vue.prototype.getDecodeUrl = function(e) {
 		if (Vue.prototype.isInvalid(e)) {
 			let url = decodeURIComponent(e)
@@ -26,6 +27,14 @@ const install = (Vue, options) => {
 			}
 		} else {
 			return false
+		}
+	}
+	// 是否是有效值
+	Vue.prototype.isInvalid = function(e) {
+		if (e === '' || e === null || e === undefined) {
+			return false
+		} else {
+			return true
 		}
 	}
 	/**
@@ -52,6 +61,7 @@ const install = (Vue, options) => {
 		console.log("url:", urlVal + '/' + appVal + '/' + srvTypeVal + '/' + srvVal)
 		return urlVal + '/' + appVal + '/' + srvTypeVal + '/' + srvVal
 	}
+	// 组装请求参数
 	Vue.prototype.selectRequestObjs = function(srv, cond, order) { // 给自定义方法起个名
 		let selectRequestObj = {}
 		selectRequestObj['serviceName'] = ''
@@ -66,7 +76,6 @@ const install = (Vue, options) => {
 		if (order) {
 			selectRequestObj['order'] = order
 		}
-
 		return selectRequestObj
 	}
 	/**
@@ -128,7 +137,6 @@ const install = (Vue, options) => {
 	}
 	/**
 	 * @param {String} v2res  V2 请求原始数据
-	 * 
 	 */
 	Vue.prototype.getPageConfig = function(v2res, useType) {
 		let pageConfigs = v2res || false
@@ -306,6 +314,14 @@ const install = (Vue, options) => {
 						fieldInfo.srvInfo.parent_no = config.parent_no
 					}
 				}
+				if (config.fieldType === 'id_photo') {
+					fieldInfo.type = 'images'
+					fieldInfo.fieldType = "id_photo"
+					fieldInfo.srvInfo = {
+						tableName: item.table_name,
+						appNo: item.table_name.substring(item.table_name.indexOf("bx") + 2, item.table_name.indexOf("_"))
+					}
+				}
 			}
 			switch (useType) {
 				case "add":
@@ -372,10 +388,8 @@ const install = (Vue, options) => {
 	}
 	/** 封装按钮的配置信息
 	 * @param {String} buttons  按钮数据
-	 * 
 	 */
 	Vue.prototype.getButtonInfo = function(buttons, pageType) {
-
 		let cols = buttons
 		let buttonInfo = {}
 		cols = cols.filter((item, index) => {
@@ -418,13 +432,32 @@ const install = (Vue, options) => {
 				default:
 					break;
 			}
-
-			// if( item.button_type === "submit"){
-			// 	buttonInfo.ontap = Vue.prototype.onRequest
-			// }
-
 		})
 		return cols
+	}
+	// 获取图片路径
+	Vue.prototype.getFilePath = async function(e) {
+		let url = Vue.prototype.getServiceUrl('file', 'srvfile_attachment_select', 'select')
+		let req = {
+			"serviceName": "srvfile_attachment_select",
+			"colNames": ["*"],
+			"condition": [{
+				"colName": "file_no",
+				"value": e,
+				"ruleType": "eq",
+			}, {
+				"colName": "is_delete",
+				"value": "1",
+				"ruleType": "eq",
+			}, ]
+		}
+		if (e) {
+			let response = await this.$http.post(url, req);
+			console.log('srvfile_attachment_select', response);
+			if (response.data.state === 'SUCCESS' && response.data.data.length > 0) {
+				return response.data.data
+			}
+		}
 	}
 	/**
 	 * 树形数据封装
@@ -579,80 +612,79 @@ const install = (Vue, options) => {
 		return newObj
 	}
 
-
 	Vue.prototype.verifyLogin = async function(code) {
-			// 小程序、公众号静默登录
-			let res = await api.verifyLogin(code)
-			let resData = res;
-			let loginMsg = {
-				bx_auth_ticket: resData.bx_auth_ticket,
-				expire_time: resData.expire_time
-			};
-			let expire_timestamp = parseInt(new Date().getTime() / 1000) + loginMsg.expire_time; //过期时间的时间戳(秒)
-			uni.setStorageSync('bx_auth_ticket', resData.bx_auth_ticket);
-			uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
-			uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
-			uni.setStorageSync('isLogin', true)
-			return resData
-		},
-		// 查找数据库中保存的微信用户信息，如果没有,则保存该微信用户的用户信息到服务器
-		Vue.prototype.getWxUserInfo = async function(userInfo) {
-				//查找微信用户头像昵称
-				let optionType = 'select';
-				let srv = 'srvwx_basic_user_info_select';
-				let app = 'wx';
-				let req = {
-					serviceName: 'srvwx_basic_user_info_select',
-					colNames: ['*'],
-					condition: [{
-						colName: 'app_no',
-						ruleType: 'eq',
-						value: uni.getStorageSync('_appNo') ? uni.getStorageSync('_appNo') : Vue.prototype.$config.appNo.wxmp
-					}]
-				};
-				let res = await Vue.prototype.onRequest(optionType, srv, req, app);
-				if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
-					let wxUser = res.data.data[0];
-					uni.setStorageSync('backWxUserInfo', wxUser);
-					if (!wxUser.nickname) {
-						if (userInfo) {
-							Vue.prototype.setWxUserInfo(userInfo)
-						}
-					}
-				} else if (userInfo) {
+		// 小程序、公众号静默登录
+		let res = await api.verifyLogin(code)
+		let resData = res;
+		let loginMsg = {
+			bx_auth_ticket: resData.bx_auth_ticket,
+			expire_time: resData.expire_time
+		};
+		let expire_timestamp = parseInt(new Date().getTime() / 1000) + loginMsg.expire_time; //过期时间的时间戳(秒)
+		uni.setStorageSync('bx_auth_ticket', resData.bx_auth_ticket);
+		uni.setStorageSync('expire_time', resData.expire_time); // 有效时间
+		uni.setStorageSync('expire_timestamp', expire_timestamp); // 过期时间
+		uni.setStorageSync('isLogin', true)
+		return resData
+	}
+	// 查找数据库中保存的微信用户信息，如果没有,则保存该微信用户的用户信息到服务器
+	Vue.prototype.getWxUserInfo = async function(userInfo) {
+		//查找微信用户头像昵称
+		let optionType = 'select';
+		let srv = 'srvwx_basic_user_info_select';
+		let app = 'wx';
+		let req = {
+			serviceName: 'srvwx_basic_user_info_select',
+			colNames: ['*'],
+			condition: [{
+				colName: 'app_no',
+				ruleType: 'eq',
+				value: uni.getStorageSync('_appNo') ? uni.getStorageSync('_appNo') : Vue.prototype.$config.appNo.wxmp
+			}]
+		};
+		let res = await Vue.prototype.onRequest(optionType, srv, req, app);
+		if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
+			let wxUser = res.data.data[0];
+			uni.setStorageSync('backWxUserInfo', wxUser);
+			if (!wxUser.nickname) {
+				if (userInfo) {
 					Vue.prototype.setWxUserInfo(userInfo)
 				}
-			},
-			// 保存微信用户信息
-			Vue.prototype.setWxUserInfo = async function(e) {
-				try {
-					let userInfo = typeof e === 'string' ? JSON.parse(e) : e
-				} catch (err) {
-					//TODO handle the exception
-					console.log(err)
-				}
-				console.log("setWxUserInfo", userInfo)
-				let url = Vue.prototype.getServiceUrl('wx', 'srvwx_basic_user_info_save', 'operate')
-				let req = [{
-					"serviceName": "srvwx_basic_user_info_save",
-					"data": [{
-						"app_no": Vue.prototype.$config.appNo.wxmp,
-						"nickname": userInfo.nickname,
-						"sex": userInfo.sex,
-						"country": userInfo.country,
-						"province": userInfo.province,
-						"city": userInfo.city,
-						"headimgurl": userInfo.headimgurl
-					}],
-				}]
-				if (e) {
-					let response = await this.$http.post(url, req);
-					console.log('srvfile_attachment_select', response);
-					if (response.data.state === 'SUCCESS' && response.data.data.length > 0) {
-						return response.data.data
-					}
-				}
 			}
+		} else if (userInfo) {
+			Vue.prototype.setWxUserInfo(userInfo)
+		}
+	}
+	// 保存微信用户信息
+	Vue.prototype.setWxUserInfo = async function(e) {
+		try {
+			let userInfo = typeof e === 'string' ? JSON.parse(e) : e
+		} catch (err) {
+			//TODO handle the exception
+			console.log(err)
+		}
+		console.log("setWxUserInfo", userInfo)
+		let url = Vue.prototype.getServiceUrl('wx', 'srvwx_basic_user_info_save', 'operate')
+		let req = [{
+			"serviceName": "srvwx_basic_user_info_save",
+			"data": [{
+				"app_no": Vue.prototype.$config.appNo.wxmp,
+				"nickname": userInfo.nickname,
+				"sex": userInfo.sex,
+				"country": userInfo.country,
+				"province": userInfo.province,
+				"city": userInfo.city,
+				"headimgurl": userInfo.headimgurl
+			}],
+		}]
+		if (e) {
+			let response = await this.$http.post(url, req);
+			console.log('srvfile_attachment_select', response);
+			if (response.data.state === 'SUCCESS' && response.data.data.length > 0) {
+				return response.data.data
+			}
+		}
+	}
 }
 
 export default install

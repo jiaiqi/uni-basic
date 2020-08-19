@@ -8,6 +8,7 @@ const config = {
 		test: "", //测试接口
 	},
 	frontEndAddress: 'https://wx2.100xsys.cn/ymt/',
+	serviceAddress: 'https://srvms.100xsys.cn',
 	backEndAddress: 'https://srvms.100xsys.cn',
 	onTicket: false, //使用本地的bx_auth_ticket
 	bx_auth_ticket: "",
@@ -29,8 +30,17 @@ const config = {
 const api = {
 	srvHost: config.host.backUrl,
 	// 通用接口
-
+	getFilePath: config.serviceAddress + '/file/download?filePath=', // 文件路径地址
+	add: config.serviceAddress + '/bxsys/operate', // 新增
+	update: config.serviceAddress + '/bxsys/operate', // 修改
+	delete: config.serviceAddress + '/bxsys/operate', // 删除
+	saveDraft: config.serviceAddress + '/bxsys/saveDraft', // 保存草稿
+	upload: config.serviceAddress + '/file/upload', // 上传文件
+	deleteFile: config.serviceAddress + '/file/delete', // 删除文件
 	// 微信相关
+	getSignature: config.serviceAddress + '/wx/select/srvwx_app_signature_select', //获取js-sdk签名
+	getUserInfo: config.serviceAddress + '/wx/select/srvwx_basic_user_info_select', //获取用户信息
+	saveShareRecord: config.serviceAddress + '/daq/add/srvdaq_record_share_add', //保存微信分享记录
 	getAuthorization: { //获取公众号授权
 		url: config.host.backUrl + '/wx/operate/srvwx_public_page_authorization',
 		serviceName: 'srvwx_public_page_authorization'

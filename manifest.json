@@ -1,7 +1,7 @@
 {
-    "name" : "uniBasicProject",
+    "name" : "ubasic",
     "appid" : "__UNI__93AF36A",
-    "description" : "uniapp基础项目",
+    "description" : "智慧宝塔一码通",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,
@@ -86,7 +86,7 @@
             }
         },
         "template" : "template.html",
-        "title" : "ubasic",
+        "title" : "智慧宝塔一码通",
         "domain" : "https://wx2.100xsys.cn",
         "devServer" : {
             "https" : false
