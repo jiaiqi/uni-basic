@@ -59,7 +59,7 @@ export default {
 	methods: {
 		async getFieldsV2() {
 			let app = uni.getStorageSync('activeApp');
-			let colVs = await this.getServiceV2('srvspocp_merchant_select', 'list', 'list', this.srvInfo.app);
+			let colVs = await this.getServiceV2(this.srvInfo.serviceName, 'list', 'list', this.srvInfo.app);
 			if (!this.navigationBarTitle) {
 				uni.setNavigationBarTitle({
 					title: colVs.service_view_name
@@ -76,7 +76,11 @@ export default {
 			}
 			this.colsV2Data = colVs;
 			this.fields = colVs._fieldInfo;
-			this.$emit('getRowButton',colVs.rowButton)
+			if(colVs._rowButtons){
+				this.$emit('getRowButton',colVs._rowButtons)
+			}else{
+				this.$emit('getRowButton',colVs.rowButton)
+			}
 		},
 		/*
 		 * 调用接口从后台获取数据，需要注意的是：

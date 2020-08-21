@@ -145,6 +145,7 @@
 					<!-- #endif -->
 				</view>
 				<textarea
+					class="item-group"
 					style="min-height: 60px;width: 100%;"
 					:maxlength="fieldData.item_type_attr && fieldData.item_type_attr.max_len ? fieldData.item_type_attr.max_len : 100"
 					@blur="onInputBlur"
@@ -196,7 +197,17 @@
 					></text>
 
 					<w-picker mode="date" startYear="1900" endYear="2030" :current="false" @confirm="onConfirm" :disabledAfter="false" ref="date" themeColor="#f00"></w-picker>
-					<w-picker mode="date" startYear="1900" endYear="2030" :current="false" @confirm="onConfirm" :disabledAfter="false" ref="Date" themeColor="#f00"></w-picker>
+					<w-picker
+						mode="date"
+						startYear="1900"
+						endYear="2030"
+						defaultVal="1990-01-01"
+						:current="false"
+						@confirm="onConfirm"
+						:disabledAfter="false"
+						ref="Date"
+						themeColor="#f00"
+					></w-picker>
 					<w-picker mode="yearMonth" startYear="1900" endYear="2030" :current="false" @confirm="onConfirm" :disabledAfter="false" ref="yearMonth" themeColor="#f00"></w-picker>
 					<w-picker mode="dateTime" startYear="1900" endYear="2030" step="1" :current="false" @confirm="onConfirm" ref="dateTime" themeColor="#f00"></w-picker>
 					<w-picker mode="time" :current="false" @confirm="onConfirm" ref="time" step="1"></w-picker>
@@ -348,7 +359,7 @@
 					@clickLastNode="onMenu"
 				></bxTreeSelector>
 				<view class="dialog-button">
-					<view class="cu-btn bg-blue shadow round margin-right" @tap="useKeywords">确定</view>
+					<view class="cu-btn bg-blue shadow round margin-right" @tap="useKeywords" v-if="fieldData.srvInfo && fieldData.srvInfo.canInput">确定</view>
 					<view class="cu-btn bg-gray shadow round" @tap="showTreeSelector = false">取消</view>
 				</view>
 			</view>
@@ -569,15 +580,15 @@ export default {
 		this.reqHeader = {
 			bx_auth_ticket: uni.getStorageSync('bx_auth_ticket')
 		};
-		if (this.fieldData.type === 'images' || this.fieldData.type === 'file ' || this.fieldData.type === 'video') {
-			(this.formData = {
+		if (this.fieldData.type === 'images' || this.fieldData.type === 'file' || this.fieldData.type === 'video') {
+			this.formData = {
 				serviceName: 'srv_bxfile_service',
 				interfaceName: 'add',
 				app_no: '',
 				table_name: '',
 				columns: ''
-			}),
-				(this.formData['app_no'] = this.fieldData.srvInfo.appNo);
+			};
+			this.formData['app_no'] = this.fieldData.srvInfo.appNo;
 			// this.formData['table_name'] = this.fieldData.srvInfo.tableName;
 			this.formData['columns'] = this.fieldData.column;
 			if (this.fieldData.value !== '' && this.fieldData.value !== null && this.fieldData.value !== undefined) {
@@ -607,7 +618,7 @@ export default {
 		useKeywords() {
 			let keyword = this.keyword;
 			this.showTreeSelector = false;
-			if(keyword){
+			if (keyword) {
 				this.fieldData.value = keyword;
 				this.onInputBlur();
 				this.$emit('on-value-change', this.fieldData);
@@ -806,6 +817,10 @@ export default {
 			console.log('文件上传成功', e);
 			if (e.response.file_no) {
 				this.fieldData.value = e.response.file_no;
+			}
+			debugger
+			if (this.fieldData.moreConfig && this.fieldData.moreConfig.fieldType === 'id_photo' &&e.response.file_no) {
+				this.toOCR(e.response.file_no);
 			}
 		},
 		toPage(e) {
@@ -1266,6 +1281,9 @@ export default {
 	.item-group {
 		padding: 10rpx;
 		border: 1px solid #f1f1f1;
+		&.cu-form-group uni-textarea {
+			margin: 0;
+		}
 	}
 	radio-group {
 		width: 100%;

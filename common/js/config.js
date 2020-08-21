@@ -11,11 +11,12 @@ const config = {
 	serviceAddress: 'https://srvms.100xsys.cn',
 	backEndAddress: 'https://srvms.100xsys.cn',
 	onTicket: false, //使用本地的bx_auth_ticket
+	ticket:"xabxdzkj-c4ae8492-a3e0-4b74-8974-9fa9295a0360",
 	bx_auth_ticket: "",
 	appName: "spocp", //默认服务app
 	activeApp: "spocp", //当前服务app
 	singleApp: true, //是否单app项目
-	homePath: "/pages/public/home/home", //登录后默认要跳转到的页面
+	homePath: "/pages/specific/index/index", //登录后默认要跳转到的页面
 	appID: {
 		// wxmp: 'wx8e6f993081f6e979',// 百想助理
 		wxmp: 'wx08876efb5760ca75', //生活能力评估

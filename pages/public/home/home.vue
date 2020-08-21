@@ -38,6 +38,7 @@ export default {
 		};
 	},
 	methods: {
+	
 		clickButton(e) {
 			uni.navigateTo({
 				url: e.dest_page
@@ -90,28 +91,31 @@ export default {
 		},
 		changePage(item, index) {
 			if (item.page_name === '我的') {
-				jweixin.ready(function() {
-					jweixin.checkJsApi({
-						jsApiList: ['scanQRCode'],
-						success: function(res) {
-							console.warn('---------------打开扫一扫---------------',res);
-							jweixin.scanQRCode({
-								needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
-								scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
-								success: function(res) {
-									var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-									console.log(result);
-								},
-								error(e){
-									console.error(e)
-								}
-							});
-						},
-						error(e){
-							console.error('checkJsApi失败',e)
-						},
-					});
-				});
+				uni.navigateTo({
+					url:"/pages/specific/couponList/couponList"
+				})
+				// jweixin.ready(function() {
+				// 	jweixin.checkJsApi({
+				// 		jsApiList: ['scanQRCode'],
+				// 		success: function(res) {
+				// 			console.warn('---------------打开扫一扫---------------',res);
+				// 			jweixin.scanQRCode({
+				// 				needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+				// 				scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
+				// 				success: function(res) {
+				// 					var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+				// 					console.log(result);
+				// 				},
+				// 				error(e){
+				// 					console.error(e)
+				// 				}
+				// 			});
+				// 		},
+				// 		error(e){
+				// 			console.error('checkJsApi失败',e)
+				// 		},
+				// 	});
+				// });
 			
 			} else {
 				let websiteList = this.websiteList;
@@ -187,6 +191,7 @@ export default {
 			this.website_no = option.website_no;
 		}
 		this.getSignature()
+		this.selectRealNameInfo()
 	},
 	onShareAppMessage(res) {}
 };

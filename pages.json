@@ -41,15 +41,52 @@
 			"path": "pages/specific/addInfo/addInfo",
 			"style": {}
 		}, {
-			"path": "pages/specific/marchantReg/marchantReg",
+			"path": "pages/specific/merchantReg/merchantReg",
 			"style": {}
 		}, {
-			"path": "pages/specific/marchantList/marchantList",
+			"path": "pages/specific/merchantList/merchantList",
 			"style": {
 				"navigationBarTitleText": "员工信息"
 			}
+		},
+		{
+			"path": "pages/specific/qrCodeShow/qrCodeShow",
+			"style": {
+				"navigationBarTitleText": "个人信息二维码"
+			}
+		},
+		{
+			"path": "pages/specific/getCoupon/getCoupon",
+			"style": {
+				"navigationBarTitleText": "优惠券领取"
+			}
+		},
+		{
+			"path": "pages/specific/couponList/couponList",
+			"style": {
+				// "navigationBarTitleText":"优惠券列表",
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "white"
+			}
+		},
+		{
+			"path": "pages/specific/couponUsage/couponUsage",
+			"style": {
+				"navigationBarTitleText": "优惠券使用"
+			}
+		}, {
+			"path": "pages/specific/qrcodeDetail/qrcodeDetail",
+			"style": {}
 		}
-	],
+	    ,{
+            "path" : "pages/specific/qrCode/qrCode",
+            "style" : {}
+        }
+        ,{
+            "path" : "pages/specific/index/index",
+            "style" : {}
+        }
+    ],
 	"globalStyle": {
 		"navigationStyle": "custom",
 		"navigationBarTextStyle": "white",

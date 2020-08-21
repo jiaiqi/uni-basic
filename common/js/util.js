@@ -144,7 +144,8 @@ const install = (Vue, options) => {
 			pageConfigs["_fieldInfo"] = Vue.prototype.getFieldInfo(v2res.srv_cols, useType)
 			// pageConfigs["_fieldInfo"] = Vue.prototype.arraySort(pageConfigs["_fieldInfo"], "seq")
 			if (useType === 'list') {
-				pageConfigs["_buttonInfo"] = Vue.prototype.getButtonInfo(v2res.gridButton)
+				pageConfigs["_buttonInfo"] = Vue.prototype.getButtonInfo(v2res.gridButton, useType)
+				pageConfigs["_rowButtons"] = Vue.prototype.getRowButton(v2res.rowButton, useType)
 			}
 			if (useType === 'treelist') {
 				// pageConfigs["_buttonInfo"] = Vue.prototype.getButtonInfo(v2res.gridButton)
@@ -158,6 +159,16 @@ const install = (Vue, options) => {
 		} else {
 			return false
 		}
+	}
+	Vue.prototype.getRowButton = (buttons, type) => {
+		if (!buttons || !Array.isArray(buttons) || buttons.length < 1) return
+		let button = JSON.parse(JSON.stringify(buttons))
+		button = button.filter(btn => {
+			if (btn.button_type == 'edit' || btn.button_type == 'delete' || btn.button_type == 'customize') {
+				return btn
+			}
+		})
+		return button
 	}
 	/** 封装 field 的配置信息
 	 * @param {String} srvCol  cols 数组
@@ -223,6 +234,21 @@ const install = (Vue, options) => {
 				fieldInfo.type = "dateTime"
 			} else if (item.col_type === "FileList") {
 				fieldInfo.type = "file"
+				if (item.columns === "identity_image" || item.columns === "id_card_photo") {
+					if (item.more_config) {
+						try {
+							let settings = JSON.parse(item.more_config)
+							fieldInfo.settings = settings
+						} catch (e) {
+							//TODO handle the exception
+						}
+					} else {
+						fieldInfo.moreConfig = {
+							fieldType: "id_photo"
+						}
+						// id_photo
+					}
+				}
 				fieldInfo.srvInfo = {
 					tableName: item.table_name,
 					appNo: item.table_name.substring(item.table_name.indexOf("bx") + 2, item.table_name.indexOf("_"))
@@ -251,8 +277,8 @@ const install = (Vue, options) => {
 				fieldInfo.type = "checkboxFk"
 				fieldInfo.options = item.option_list_v2
 			} else if (item.col_type === "MultilineText") {
-				// fieldInfo.type = "textarea"
-				fieldInfo.type = "input"
+				fieldInfo.type = "textarea"
+				// fieldInfo.type = "input"
 			} else if (item.col_type === "Money" || item.col_type === "Float") {
 				fieldInfo.type = "digit"
 			} else if (item.col_type === "Integer" || item.col_type === "int") {
@@ -402,7 +428,7 @@ const install = (Vue, options) => {
 					break;
 				case "list":
 					if ((item.button_type === "addchild" || item.button_type === "edit" || item.button_type === "delete" ||
-							item.button_type === "add") && item.permission) {
+							item.button_type === "add" || item.button_type === "customize") && item.permission) {
 						return item
 					}
 					break;
@@ -639,20 +665,22 @@ const install = (Vue, options) => {
 			condition: [{
 				colName: 'app_no',
 				ruleType: 'eq',
-				value: uni.getStorageSync('_appNo') ? uni.getStorageSync('_appNo') : Vue.prototype.$config.appNo.wxmp
+				value: "APPNO20200107181133"
 			}]
 		};
 		let res = await Vue.prototype.onRequest(optionType, srv, req, app);
 		if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
 			let wxUser = res.data.data[0];
 			uni.setStorageSync('backWxUserInfo', wxUser);
-			if (!wxUser.nickname) {
-				if (userInfo) {
-					Vue.prototype.setWxUserInfo(userInfo)
-				}
-			}
+			console.log('微信用户信息：', wxUser)
+			// if (!wxUser.nickname) {
+			// 	if (userInfo) {
+			// 		Vue.prototype.setWxUserInfo(userInfo)
+			// 	}
+			// }
 		} else if (userInfo) {
-			Vue.prototype.setWxUserInfo(userInfo)
+			console.log('未获取到微信用户信息')
+			// Vue.prototype.setWxUserInfo(userInfo)
 		}
 	}
 	// 保存微信用户信息
@@ -683,6 +711,92 @@ const install = (Vue, options) => {
 			if (response.data.state === 'SUCCESS' && response.data.data.length > 0) {
 				return response.data.data
 			}
+		}
+	}
+	Vue.prototype.selectRealNameInfo = async function(num = 0) {
+		// 从实名认证信息表中查找当前帐号是否有实名认证信息
+		const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
+		let user_info = uni.getStorageSync('login_user_info');
+		let req = {
+			serviceName: 'srvspocp_auth_personal_info_select',
+			colNames: ['*'],
+			condition: [{}],
+			page: {
+				pageNo: 1,
+				rownumber: 10
+			},
+		};
+		if (user_info.user_no) {
+			req.condition = [{
+				colName: 'auth_user_no',
+				value: user_info.user_no,
+				ruleType: 'eq'
+			}];
+		} else {
+			console.warn('未发现当前用户登录信息');
+			return;
+		}
+		if ((num || num === 0) && num > 3) {
+			uni.setStorageSync('realNameInfo', {
+				sataus: 'fail',
+				msg: `查询到用户实名信息失败三次及三次以上`
+			});
+			return false;
+		}
+		let res = await this.$http.post(url, req);
+		if (res.data.state === 'SUCCESS') {
+			if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+				let realNameInfo = {
+					status: 'success',
+					data: res.data.data[0],
+					_merchant_user: res.data._merchant_user
+				}
+				uni.setStorageSync('realNameInfo', realNameInfo);
+				console.log('用户信息:', realNameInfo);
+				return realNameInfo;
+			} else {
+				console.log('未查询到用户实名信息:', res.data);
+				uni.setStorageSync('realNameInfo', {
+					sataus: 'fail',
+					msg: '未查询到用户实名信息'
+				});
+				uni.showModal({
+					title: '提示',
+					content: '未发现当前登录用户实名认证信息,点击确定按钮进行实名认证',
+					showCancel: false,
+					success(res) {
+						if (res.confirm) {
+							Vue.prototype.setBackUrl()
+							uni.redirectTo({
+								url: '/pages/specific/addInfo/addInfo'
+							});
+						}
+					}
+				});
+			}
+		} else {
+			uni.setStorageSync('realNameInfo', {
+				sataus: 'fail',
+				msg: `查询到用户实名信息失败${num}次`
+			});
+			num += 1;
+			this.selectRealNameInfo(num);
+			uni.showToast({
+				title: res.data.resultMessage,
+				icon: 'none'
+			});
+		}
+	}
+	Vue.prototype.setBackUrl = function() {
+		let path = window.location.href
+		// ?及?之后的字符
+		let query = window.location.search
+		let index = path.lastIndexOf('/pages/')
+		if (index !== -1) {
+			let backUrl = path.substring(index) + query
+			uni.setStorageSync('backUrl', backUrl)
+		} else {
+			console.log('没有path' + path);
 		}
 	}
 }

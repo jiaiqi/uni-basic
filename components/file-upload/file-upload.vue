@@ -5,6 +5,8 @@
 		<view class=""><text ref="fileTip" id="fileTip"></text></view>
 		<view class="file-list">
 			<view class="file-list-item" v-for="(item, index) in fileResList" :key="index">
+				<image :src="fileurl" v-if="fileurl" class="addNew image"></image>
+				<!-- <view class="file-info" v-if="item.src_name">{{ item.src_name }}</view> -->
 				<view class="file-info" v-if="item.src_name">{{ item.src_name }}</view>
 			</view>
 		</view>
@@ -19,7 +21,8 @@ export default {
 		return {
 			fileList: [],
 			fileInfo: {},
-			fileResList: []
+			fileResList: [],
+			fileurl: ''
 		};
 	},
 	props: {
@@ -38,7 +41,6 @@ export default {
 			input.type = 'file';
 			input.onchange = event => {
 				self.fileChange(event);
-
 				// const files = event.target.files
 				// if (files && files[0]) {
 				//   const file = files[0];
@@ -84,7 +86,7 @@ export default {
 							bx_auth_ticket: uni.getStorageSync('bx_auth_ticket'),
 							serviceName: 'srv_bxfile_service',
 							interfaceName: 'add',
-							app_no: uni.getStorageSync('activeApp')
+							app_no: self.srvInfo.app_no
 						},
 						filename: 'file',
 						action: self.$api.upload,
@@ -98,20 +100,6 @@ export default {
 							// self.handleError(err, response, file);
 						}
 					});
-					// var xhr = new XMLHttpRequest();
-					// xhr.open('POST', self.$api.upload, true);
-					// xhr.setRequestHeader('bx_auth_ticket', uni.getStorageSync('bx_auth_ticket'));
-					// xhr.onreadystatechange = function() {
-					//   console.log(xhr.responseText)
-					//   if (xhr.readyState == 4) {
-					//     if (xhr.status == 200 || xhr.status == 304) {
-					//       console.log(xhr.responseText)
-					//       return xhr.responseText
-					//     }
-					//   }
-					// };
-					// xhr.send(formData);
-					// return xhr
 				}
 			}
 		},
@@ -131,19 +119,19 @@ export default {
 		},
 		handleSuccess(res, file) {
 			const _file = this.getFile(file);
-			// this.fileList.push(_file)
 			if (_file) {
 				_file.status = 'finished';
 				_file.response = res;
-				// this.fileResList.push(res)
 				this.$set(this.fileResList, 0, res);
 				this.fileInfo = res;
+				this.fileurl = this.$api.getFilePath + res.fileurl;
+				// debugger
+				// if(res.file_no){
+				// 	this.getFilePath(res.file_no).then(data=>{
+				// 		debugger
+				// 	})
+				// }
 				this.$emit('add', _file);
-				// this.onSuccess(res, _file, this.fileList);
-				// this.dispatch('FormItem', 'on-form-change', _file);
-				// setTimeout(() => {
-				//   _file.showProgress = false;
-				// }, 1000);
 			}
 		},
 		handleError(err, response, file) {

@@ -4,12 +4,12 @@
       :id="scrollId"
       class="s-pull-scroll-view"
       :class="{'is-fixed':fixed}"
-      :style="{'padding-top':padTop,'padding-bottom':padBottom,'top':fixedTop,'bottom':fixedBottom}"
+      :style="{'padding-top':padTop,'padding-bottom':padBottom,'top':fixedTop,'bottom':fixedBottom,'height': heightStyle}"
       :scroll-top="scrollTop"
       :scroll-with-animation="false"
       :scroll-y="scrollAble"
       :enable-back-to-top="true"
-      @scroll="scroll"
+      @scroll.stop="scroll"
       @touchstart="touchstart"
       @touchmove="touchmove"
       @touchend="touchend"
@@ -66,6 +66,7 @@
 </template>
 
 <script>
+
 export default {
   name: 's-pull-scroll',
   data () {
@@ -106,11 +107,28 @@ export default {
       isUpFinish: false, // 是否加载完毕
       isUpError: false, // 是否上拉加载出错
       isShowBackTop: false, // 是否显示回到顶部按钮
-      scrollAble: true, // 是否禁止下滑 (下拉时禁止,避免抖动)
+      scrollAble: false, // 是否禁止下滑 (下拉时禁止,避免抖动)
       scrollTop: 0 // 滚动条的位置
     };
   },
   props: {
+	  
+	  // 是否允许下拉刷新
+	  enablePullDown: {
+	    type: Boolean,
+	    default: true
+	  },
+	  // 是否允许上拉加载
+	  enablePullUp: {
+	    type: Boolean,
+	    default: true
+	  },
+	 // height
+	  heightStyle: {
+	    type: String,
+	    default: ''
+	 },
+	 
     // class
     customClass: {
       type: String,
@@ -227,11 +245,6 @@ export default {
     // 下拉配置
     // 下拉回掉，参数为vm
     pullDown: Function,
-    // 是否允许下拉刷新
-    enablePullDown: {
-      type: Boolean,
-      default: true
-    },
     downOffset: {
       type: Number,
       default: 100
@@ -263,11 +276,6 @@ export default {
     // 上拉配置
     // 上拉回掉，参数为vm
     pullUp: Function,
-    // 是否允许上拉加载
-    enablePullUp: {
-      type: Boolean,
-      default: true
-    },
     upOffset: {
       type: Number,
       default: 160
@@ -279,6 +287,9 @@ export default {
       type: Number,
       default: 1000
     }
+  },
+  beforeCreate(){
+	this.$emit("s-pull-load",true)  
   },
   watch: {
     top () {
@@ -382,9 +393,12 @@ export default {
         this.moveTime = t;
         this.moveTimeDiff = 1000 / this.downFps;
       }
+
       let scrollRealTop = this.scrollRealTop; // 当前滚动条的距离
       let curPoint = this.getPoint(e); // 当前点
+
       let moveY = curPoint.y - this.startPoint.y; // 和起点比,移动的距离,大于0向下拉,小于0向上拉
+
       // (向下拉&&在顶部) scroll-view在滚动时不会触发touchmove,当触顶/底/左/右时,才会触发touchmove
       // scroll-view滚动到顶部时,scrollTop不一定为0; 在iOS的APP中scrollTop可能为负数,不一定和startTop相等
       if (moveY > 0 && (scrollRealTop <= 0 || (scrollRealTop <= this.numDownStartTop && scrollRealTop === this.startTop))) {
@@ -398,14 +412,18 @@ export default {
             let angle = Math.asin(y / z) / Math.PI * 180; // 两点之间的角度,区间 [0,90]
             if (angle < this.downMinAngle) return; // 如果小于配置的角度,则不往下执行下拉刷新
           }
+
           // 如果手指的位置超过配置的距离,则提前结束下拉,避免Webview嵌套导致touchend无法触发
           if (this.maxTouchmoveY > 0 && curPoint.y >= this.maxTouchmoveY) {
             this.inTouchend = true; // 标记执行touchend
             this.touchend(); // 提前触发touchend
             return;
           }
+
           this.preventDefault(e); // 阻止默认事件
+
           let diff = curPoint.y - this.lastPoint.y; // 和上次比,移动的距离 (大于0向下,小于0向上)
+
           // 下拉距离  < 指定距离
           if (this.downHight < this.numDownOffset) {
             if (this.movetype !== 1) {
@@ -550,9 +568,11 @@ export default {
     /* 显示下拉进度布局 */
     showDownLoading () {
       this.isEmpty = false;
+
       this.isUpLoading = false;
       this.isUpError = false;
       this.isUpFinish = false;
+
       this.isShowDownTip = false;
       this.isDownSuccess = false;
       this.isDownError = false;
@@ -700,15 +720,15 @@ export default {
   mounted () {
     // 设置容器的高度
     this.refreshClientHeight = this.refreshClientHeight.bind(this);
-    uni.onWindowResize && uni.onWindowResize(this.refreshClientHeight);
+    uni.onWindowResize(this.refreshClientHeight);
     this.refreshClientHeight();
-    // h5 阻止touchmove默认滚动
-    this.$el && this.$el.addEventListener && this.$el.addEventListener('touchmove', e => {
-      this.preventTouchmove && e.preventDefault();
-    });
+
+    // this.$el && this.$el.addEventListener && this.$el.addEventListener('touchmove', e => {
+    //   this.preventTouchmove && e.preventDefault();
+    // });
   },
   beforeDestroy () {
-    uni.offWindowResize && uni.offWindowResize(this.refreshClientHeight);
+    uni.offWindowResize(this.refreshClientHeight);
   }
 };
 </script>
@@ -717,6 +737,7 @@ export default {
 .s-pull-scroll {
   height: 100%;
   -webkit-overflow-scrolling: touch;
+
   .s-pull-scroll-view {
     position: relative;
     width: 100%;
@@ -734,7 +755,7 @@ export default {
     bottom: 0;
     width: auto;
     height: auto;
-	background-color: #F5F5F5;
+	background-color: #f5f5f5;
   }
   .s-pull-down-wrap,
   .s-pull-up-wrap,
@@ -773,14 +794,17 @@ export default {
   .s-pull-loading-rotate {
     animation: s-pull-loading-rotate 0.6s linear infinite;
   }
+
   @keyframes s-pull-loading-rotate {
     0% {
       transform: rotate(0deg);
     }
+
     100% {
       transform: rotate(360deg);
     }
   }
+
   /* 回到顶部的按钮 */
   .s-pull-back-top {
     position: relative;
@@ -797,6 +821,7 @@ export default {
     position: fixed;
     right: 20rpx;
     bottom: calc(var(--window-bottom) + 25rpx);
+
     img {
       width: 72rpx;
       height: 72rpx;

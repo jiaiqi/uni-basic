@@ -57,11 +57,11 @@ export default {
 		if (!bxAuthTicket) {
 			// this.throttle(this.wxLogin(), 3000); 登录
 		}
-		uni.setStorageSync('activeApp', 'daq');
+		// uni.setStorageSync('activeApp', 'daq');
 		if (option.website_no || option.no) {
 			this.webNo = option.website_no ? option.website_no : option.no;
 			if (option.destApp) {
-				uni.setStorageSync('activeApp', option.destApp);
+				// uni.setStorageSync('activeApp', option.destApp);
 			}
 		} else {
 			this.webNo = 'WS2020081117350012';

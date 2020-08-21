@@ -68,8 +68,8 @@ export default {
 			fields: [],
 			loadedType: 'srvV2',
 			colsV2Data: null,
-			type: '',
-			serviceName: '',
+			type: 'add',
+			serviceName: 'srvspocp_user_real_name_auth',
 			condition: [],
 			defaultCondition: [],
 			params: {},
@@ -175,9 +175,9 @@ export default {
 		}
 	},
 	onLoad() {
-		this.serviceName = 'srvspocp_user_real_name_auth';
-		this.type = 'add';
-		this.getFieldsV2(this.condition);
+		// this.serviceName = 'srvspocp_user_real_name_auth';
+		// this.type = 'add';
+		// this.getFieldsV2(this.condition);
 	},
 
 	methods: {
@@ -293,7 +293,7 @@ export default {
 			if (this.formDisabled) {
 				type = 'detail';
 			}
-			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, app);
+			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, 'spocp');
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}
@@ -458,12 +458,17 @@ export default {
 										});
 									}else{
 										uni.redirectTo({
-											url:'/pages/specific/marchantReg/marchantReg'
+											url:'/pages/specific/merchantReg/merchantReg'
 										})
 										console.log("跳转到商家登记页面")
 									}
 								}
 							});
+						}else{
+							uni.showToast({
+								title:res.data.resultMessage,
+								icon:'none'
+							})
 						}
 					}
 					break;

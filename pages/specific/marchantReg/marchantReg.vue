@@ -96,51 +96,84 @@ export default {
 		// #endif
 	},
 	onShow() {
-		let self = this;
-		let condition = this.condition;
-		if (this.type === 'detail' || this.type === 'update') {
-			this.getDetailfieldModel().then(res => {
-				if (!this.photosData) {
-					this.defaultVal = res;
-				}
-				if (this.params.formDisabled == true) {
-					this.formDisabled = true;
-				}
-				uni.$on('sendDefaultVal', e => {
-					Object.keys(e).forEach(key => {
-						self.$set(self.defaultVal, key, e[key]);
-					});
-					this.photosData = e;
-					this.getFieldsV2(condition);
-				});
-			});
-		} else {
-			uni.$on('sendDefaultVal', e => {
-				Object.keys(e).forEach(key => {
-					self.$set(self.defaultVal, key, e[key]);
-				});
-				this.photosData = e;
-			});
-			if (this.params.formDisabled == true) {
-				this.formDisabled = true;
-			}
-			this.condition = this.params.condition;
-			let cond = [];
-			if (this.params.cond && Array.isArray(this.params.cond) && this.params.cond.length > 0) {
-				cond = this.params.cond.forEach(item => {
-					if (item.colName === 'openid' && item.value === 'user_no') {
-						item.value = uni.getStorageSync('login_user_info').user_no;
-					}
-				});
-				this.condition = cond;
-			}
-			this.getFieldsV2(condition);
-		}
+		// let self = this;
+		// let condition = this.condition;
+		// if (this.type === 'detail' || this.type === 'update') {
+		// 	this.getDetailfieldModel().then(res => {
+		// 		if (!this.photosData) {
+		// 			this.defaultVal = res;
+		// 		}
+		// 		if (this.params.formDisabled == true) {
+		// 			this.formDisabled = true;
+		// 		}
+		// 		uni.$on('sendDefaultVal', e => {
+		// 			Object.keys(e).forEach(key => {
+		// 				self.$set(self.defaultVal, key, e[key]);
+		// 			});
+		// 			this.photosData = e;
+		// 			this.getFieldsV2(condition);
+		// 		});
+		// 	});
+		// } else {
+		// 	uni.$on('sendDefaultVal', e => {
+		// 		Object.keys(e).forEach(key => {
+		// 			self.$set(self.defaultVal, key, e[key]);
+		// 		});
+		// 		this.photosData = e;
+		// 	});
+		// 	if (this.params.formDisabled == true) {
+		// 		this.formDisabled = true;
+		// 	}
+		// 	this.condition = this.params.condition;
+		// 	let cond = [];
+		// 	if (this.params.cond && Array.isArray(this.params.cond) && this.params.cond.length > 0) {
+		// 		cond = this.params.cond.forEach(item => {
+		// 			if (item.colName === 'openid' && item.value === 'user_no') {
+		// 				item.value = uni.getStorageSync('login_user_info').user_no;
+		// 			}
+		// 		});
+		// 		this.condition = cond;
+		// 	}
+		// 	this.getFieldsV2(condition);
+		// }
 	},
 	onLoad() {
 		this.serviceName = 'srvspocp_merchant_user_reg';
 		this.type = 'add';
-		this.getFieldsV2(this.condition);
+		this.setBackUrl();
+		this.selectRealNameInfo().then(res => {
+			if (res) {
+				if (res.data && res.data.status === 'success' && res.data._merchant_user) {
+					uni.showModal({
+						title: '提示',
+						content: '您已经是商户负责人了,即将跳转到用户首页',
+						showCancel: false,
+						success(res) {
+							if (res.confirm) {
+								uni.redirectTo({
+									url: '/pages/specific/index/index'
+								});
+							}
+						}
+					});
+				} else {
+					this.getFieldsV2(this.condition);
+				}
+			} else {
+				uni.showModal({
+					title: '提示',
+					content: '请先进行实名认证',
+					showCancel: false,
+					success(res) {
+						if (res.confirm) {
+							uni.redirectTo({
+								url: '/pages/specific/addInfo/addInfo'
+							});
+						}
+					}
+				});
+			}
+		});
 	},
 
 	methods: {
@@ -257,10 +290,13 @@ export default {
 				type = 'detail';
 			}
 			let colVs = await this.getServiceV2(this.serviceName, 'reg', type ? type : this.type, app);
+			if (!colVs) {
+				return;
+			}
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}
-			if (colVs.child_service && Array.isArray(colVs.child_service) && colVs.child_service.length > 0) {
+			if (colVs && colVs.child_service && Array.isArray(colVs.child_service) && colVs.child_service.length > 0) {
 				// 有子表
 				this.hasChildService = true;
 				this.childService = colVs.child_service;
@@ -365,8 +401,8 @@ export default {
 								appNo: 'spocp',
 								isTree: false,
 								column: 'merchant_name',
-								showCol: 'merchant_name' ,//要展示的字段
-								canInput:true
+								showCol: 'merchant_name', //要展示的字段
+								canInput: true
 							};
 							item.option_list_v2 = {
 								refed_col: 'merchant_name',
@@ -385,6 +421,70 @@ export default {
 					break;
 			}
 		},
+		// async selectRealNameInfo(num = 0) {
+		// 	// 从实名认证信息表中查找当前帐号是否有实名认证信息
+		// 	const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
+		// 	let user_info = uni.getStorageSync('login_user_info');
+		// 	let req = { serviceName: 'srvspocp_auth_personal_info_select', colNames: ['*'], condition: [{}], page: { pageNo: 1, rownumber: 10 }, order: [] };
+		// 	if (user_info.user_no) {
+		// 		req.condition = [
+		// 			{
+		// 				colName: 'auth_user_no',
+		// 				value: user_info.user_no,
+		// 				ruleType: 'eq'
+		// 			}
+		// 		];
+		// 	} else {
+		// 		console.warn('未发现当前用户登录信息');
+		// 		return;
+		// 	}
+		// 	if ((num || num === 0) && num > 3) {
+		// 		uni.setStorageSync('realNameInfo', {
+		// 			sataus: 'fail',
+		// 			msg: `查询到用户实名信息失败三次及三次以上`
+		// 		});
+		// 		return;
+		// 	}
+		// 	let res = await this.$http.post(url, req);
+		// 	if (res.data.state === 'SUCCESS') {
+		// 		if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+		// 			uni.setStorageSync('realNameInfo', {
+		// 				status: 'success',
+		// 				data: res.data.data[0],
+		// 				_merchant_user:res.data._merchant_user
+		// 			});
+		// 			console.log('用户信息:', res.data.data[0]);
+		// 			return res.data.data[0];
+		// 		} else {
+		// 			uni.setStorageSync('realNameInfo', {
+		// 				sataus: 'fail',
+		// 				msg: '未查询到用户实名信息'
+		// 			});
+		// 			uni.showModal({
+		// 				title: '提示',
+		// 				content: '未发现当前登录用户实名认证信息,点击确定跳转到实名认证页面',
+		// 				success(res) {
+		// 					if (res.confirm) {
+		// 						uni.redirectTo({
+		// 							url: '/pages/specific/addInfo/addInfo'
+		// 						});
+		// 					}
+		// 				}
+		// 			});
+		// 		}
+		// 	} else {
+		// 		uni.setStorageSync('realNameInfo', {
+		// 			sataus: 'fail',
+		// 			msg: `查询到用户实名信息失败${num}次`
+		// 		});
+		// 		num += 1;
+		// 		this.selectRealNameInfo(num);
+		// 		uni.showToast({
+		// 			title: res.data.resultMessage,
+		// 			icon: 'none'
+		// 		});
+		// 	}
+		// },
 		async getDetailfieldModel() {
 			let params = this.deepClone(this.params);
 			let app = uni.getStorageSync('activeApp');
@@ -421,6 +521,7 @@ export default {
 						let app = uni.getStorageSync('activeApp');
 						let url = this.getServiceUrl(app, 'srvspocp_merchant_user_reg', 'operate');
 						let res = await this.$http.post(url, req);
+						this.selectRealNameInfo();
 						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
@@ -436,11 +537,11 @@ export default {
 									}
 								}
 							});
-						}else{
+						} else {
 							uni.showToast({
-								title:res.data.resultMessage,
-								icon:'none'
-							})
+								title: res.data.resultMessage,
+								icon: 'none'
+							});
 						}
 					}
 					break;
