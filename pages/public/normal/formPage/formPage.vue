@@ -15,8 +15,10 @@
 					@toPage="toPage"
 					:moreConfig="colsV2Data && colsV2Data.more_config ? colsV2Data.more_config : null"
 				></bxform>
-				<bxButtons :buttons="buttons" class="button-box" @on-button-change="onButton($event)" v-if="buttons && buttons.length > 0 && formDisabled != true"></bxButtons>
-				<view class="sublist-content" v-if="type === 'detail' && childService && childService.length > 0">
+				<bxButtons :buttons="buttons" @on-button-change="onButton($event)" v-if="buttons && buttons.length > 0 && formDisabled != true"></bxButtons>
+				<!-- <button class="bg-green cu-btn lg">查看列表</button> -->
+				<view class="sublist-content" v-if="type === 'detaill' && childService && childService.length > 0">
+					<!-- <view class="sublist-content" v-if="type === 'detail'&&hasChildService"> -->
 					<view class="sublist-box" v-if="showSublist">
 						<view class="child-service" v-for="item in childService" :key="item.service_name">
 							<view
@@ -52,6 +54,14 @@
 							</view>
 						</view>
 					</view>
+					<!-- 	<button class="cu-btn  bg-blue margin-tb-sm" v-if="!showSublist&&hasChildService" @click="showSublist = !showSublist">
+				展开子表
+				<text class="lg text-white cuIcon-down margin-left-xs"></text>
+			</button>
+			<button class="cu-btn  bg-blue margin-tb-sm" v-if="showSublist" @click="showSublist = !showSublist">
+				收起子表
+				<text class="lg text-white cuIcon-top margin-left-xs"></text>
+			</button> -->
 				</view>
 			</view>
 		</view>
@@ -68,8 +78,8 @@ export default {
 			fields: [],
 			loadedType: 'srvV2',
 			colsV2Data: null,
-			type: 'add',
-			serviceName: 'srvspocp_user_real_name_auth',
+			type: '',
+			serviceName: '',
 			condition: [],
 			defaultCondition: [],
 			params: {},
@@ -97,23 +107,13 @@ export default {
 	computed: {
 		buttons: function() {
 			let buttons = [];
-			let submitBtn = {
-				del_flag: '否',
-				page_type: '增加',
-				button_name: '提交',
-				button_type: 'submit',
-				always_show: false,
-				permission: true,
-				client_type: 'PC,APP',
-				biz_path: '/syscore/',
-				application: 'spocp',
-				is_public: true,
-				service_name: 'srvspocp_user_real_name_auth',
-				id: 18,
-				page_area: '底部按钮',
-				seq: 100
-			};
-			buttons = [submitBtn, ...buttons];
+			if (this.colsV2Data && this.colsV2Data._buttonInfo) {
+				buttons = this.colsV2Data._buttonInfo;
+				// return this.colsV2Data._buttonInfo;
+			} else if (this.colsV2Data && this.colsV2Data._formButtons) {
+				buttons = this.colsV2Data._formButtons;
+				// return this.colsV2Data._formButtons;
+			}
 			let data = {};
 			if (Array.isArray(this.fields)) {
 				this.fields.forEach(item => {
@@ -121,49 +121,166 @@ export default {
 				});
 				let fieldModel = data;
 			}
+			buttons.forEach(btn => {
+				if (btn.disp_exps) {
+					btn['display'] = eval(btn.disp_exps);
+				}
+				if (btn.operate_params) {
+					let fieldData = btn.operate_params['data'];
+					if (fieldData && Array.isArray(fieldData) && fieldData.length > 0) {
+						fieldData = fieldData[0];
+						let newData = {};
+						Object.keys(fieldData).forEach(data_item => {
+							let item = fieldData[data_item];
+							if (item.value_type && item.value_type === 'rowData') {
+								newData[data_item] = fieldModel[item.value_key];
+							}
+						});
+						btn['requestData'] = newData;
+						btn['requestCondition'] = this.condition;
+					}
+				}
+			});
 			return buttons;
 		}
 	},
 	created() {
-		
+		// #ifdef H5
+		const destApp = this.$route.query.destApp;
+		if (destApp) {
+			uni.setStorageSync('activeApp', destApp);
+		}
+		// #endif
 	},
-	onLoad() {
-		uni.setStorageSync('activeApp', 'spocp');
-		this.serviceName = 'srvspocp_user_real_name_auth';
-		this.type = 'add';
-		let _this = this;
-		this.selectRealNameInfo().then(res => {
-			if (res && res.status == 'success') {
-				uni.showModal({
-					title: '提示',
-					content: '已经实名认证,即将跳转到首页',
-					showCancel: false,
-					success(res) {
-						if (res.confirm) {
-							uni.reLaunch({
-								url: _this.$api.homePath,
-								fail(res) {
-									if (res.errMsg) {
-										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-											window.location.href = _this.$api.homePath;
-										}
-									}
-								}
-							});
-						}
+	onShow() {
+		let self = this;
+		let condition = this.condition;
+		if (this.type === 'detail' || this.type === 'update') {
+			this.getDetailfieldModel().then(res => {
+				if (!this.photosData) {
+					this.defaultVal = res;
+				}
+				if (this.params.formDisabled == true) {
+					this.formDisabled = true;
+				}
+				uni.$on('sendDefaultVal', e => {
+					Object.keys(e).forEach(key => {
+						self.$set(self.defaultVal, key, e[key]);
+					});
+					this.photosData = e;
+					this.getFieldsV2(condition);
+				});
+			});
+		} else {
+			uni.$on('sendDefaultVal', e => {
+				Object.keys(e).forEach(key => {
+					self.$set(self.defaultVal, key, e[key]);
+				});
+				this.photosData = e;
+			});
+			if (this.params.formDisabled == true) {
+				this.formDisabled = true;
+			}
+			this.condition = this.params.condition;
+			let cond = [];
+			if (this.params.cond && Array.isArray(this.params.cond) && this.params.cond.length > 0) {
+				cond = this.params.cond.forEach(item => {
+					if (item.colName === 'openid' && item.value === 'user_no') {
+						item.value = uni.getStorageSync('login_user_info').user_no;
 					}
 				});
-			} else {
-				// 未实名认证 准备实名认证表单
-				this.getFieldsV2(this.condition);
+				this.condition = cond;
 			}
-		});
+			this.getFieldsV2(condition);
+		}
+	},
+	onLoad(option) {
+		let query = JSON.parse(decodeURIComponent(option.query ? option.query : option.params ? option.params : '{}'));
+		const destApp = query.destApp;
+		if (destApp) {
+			uni.setStorageSync('activeApp', destApp);
+		}
+		if (option.serviceName) {
+			query = option;
+		}
+		if (query.params) {
+			this.params = JSON.parse(query.params);
+		}
+		if (query.formData) {
+			try {
+				this.formData = JSON.parse(decodeURIComponent(query.formData));
+				console.log('formData-formPage', this.formData);
+			} catch (e) {
+				console.log('formData', e);
+				//TODO handle the exception
+			}
+		}
+		if(option.defaultVal){
+			try{
+				this.defaultVal = JSON.parse(option.defaultVal)
+			}catch(e){
+				//TODO handle the exception
+				console.log(e)
+			}
+		}
+		if (option.params) {
+			this.params = query;
+		}
+		if (query.cond || query.condition) {
+			let cond = '';
+			if (typeof query.cond === 'string' && query.cond) {
+				cond = JSON.parse(query.cond);
+			}
+			if (typeof query.condition === 'object') {
+				cond = query.condition;
+			}
+			this.defaultCondition = cond
+		}
+		if (option.hasOwnProperty('loadedType')) {
+			this.loadedType = option.loadedType;
+		} else if (option.hasOwnProperty('params')) {
+			this.serviceName = this.params.serviceName;
+			this.type = this.params.type;
+			if (this.params.defaultCondition) {
+				this.defaultCondition = this.params.defaultCondition;
+			}
+			if (this.params.cond && Array.isArray(this.params.cond)) {
+				this.condition = this.params.cond;
+			}
+			if (this.params.defaultVal) {
+				this.defaultVal = this.params.defaultVal;
+			}
+			if (this.params.condition && Array.isArray(this.params.condition)) {
+				this.params.condition.forEach(item=>{
+					if (item.colName === 'openid' && item.value === 'user_no') {
+						item.value = uni.getStorageSync('login_user_info').user_no;
+					}
+				})
+				this.condition = this.params.condition;
+			}
+		} else if (query.serviceName && query.type) {
+			this.serviceName = query.serviceName;
+			this.type = query.type;
+			if (option.hasOwnProperty('cond')) {
+				try {
+					this.condition = JSON.parse(decodeURIComponent(option.cond));
+				} catch (e) {
+					//TODO handle the exception
+					console.log(e);
+				}
+			}
+			this.getFieldsV2(this.condition);
+		} else {
+			uni.showToast({
+				title: '加载错误',
+				icon: 'none'
+			});
+		}
 	},
 
 	methods: {
 		resetForm(e) {
 			// 重置表单
-			this.fields = null;
 			this.fields = this.deepClone(e);
 		},
 		toChildList(e) {
@@ -273,7 +390,7 @@ export default {
 			if (this.formDisabled) {
 				type = 'detail';
 			}
-			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, 'spocp');
+			let colVs = await this.getServiceV2(this.serviceName, type ? type : this.type, type ? type : this.type, app);
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}
@@ -370,12 +487,6 @@ export default {
 					} else {
 						this.fields = colVs._fieldInfo;
 					}
-					this.fields.forEach(item => {
-						if (item.column === 'auth_user_no') {
-							item.disabled = true;
-							item.value = uni.getStorageSync('login_user_info').user_no;
-						}
-					});
 					break;
 				case 'detail':
 					this.fields = this.setFieldsDefaultVal(colVs._fieldInfo, this.defaultVal);
@@ -405,9 +516,43 @@ export default {
 		},
 		async onButton(e) {
 			let data = this.$refs.bxForm.getFieldModel();
+			if (!data) {
+				uni.showToast({
+					title: '未发现修改内容'
+				});
+				return;
+			}
 			let req = this.deepClone(data);
-			let _this = this;
+			console.log(this.condition);
+			console.log(e, req);
 			switch (e.button_type) {
+				case 'edit':
+					if (e.page_type === '详情') {
+					} else {
+						if (req) {
+							req = [{ serviceName: e.service_name, data: [req], condition: this.condition }];
+							let app = uni.getStorageSync('activeApp');
+							let url = this.getServiceUrl(app, e.service_name, 'add');
+							this.onRequest('update', e.service_name, req).then(res => {
+								console.log('res:' + e.service_name, res);
+								if (res.data.state === 'SUCCESS') {
+									let resData = this.getResData(res.data.response);
+									console.log('resData', resData);
+									uni.showModal({
+										title: '提示',
+										content: '修改成功',
+										showCancel: false,
+										success(res) {
+											if (res.confirm) {
+												uni.navigateBack();
+											}
+										}
+									});
+								}
+							});
+						}
+					}
+					break;
 				case 'submit':
 					console.log('addServiceName:', e.service_name);
 					if (req) {
@@ -417,44 +562,21 @@ export default {
 							}
 						});
 						req = [{ serviceName: e.service_name, data: [req] }];
-						let app = 'spocp';
-						let url = this.getServiceUrl(app, e.service_name, 'operate');
-						if (e.serviceName === 'srvspocp_user_real_name_auth') {
-							url = this.getServiceUrl(app, e.service_name, 'operate');
-						}
+						let app = uni.getStorageSync('activeApp');
+						let url = this.getServiceUrl(app, e.service_name, 'add');
 						console.log(url, e);
 						let res = await this.$http.post(url, req);
 						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
 								title: '提示',
-								content: '登记成功,即将返回首页',
-								confirmText: '好的',
+								content: '添加成功',
 								showCancel: false,
 								success(res) {
 									if (res.confirm) {
-										uni.reLaunch({
-											url: _this.$api.homePath,
-											fail(res) {
-												if (res.errMsg) {
-													if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-														window.location.href = _this.$api.homePath;
-													}
-												}
-											}
-										});
-									} else {
-										uni.redirectTo({
-											url: '/pages/specific/merchantReg/merchantReg'
-										});
-										console.log('跳转到商家登记页面');
+										uni.navigateBack();
 									}
 								}
-							});
-						} else {
-							uni.showToast({
-								title: res.data.resultMessage,
-								icon: 'none'
 							});
 						}
 					}
@@ -470,6 +592,44 @@ export default {
 							title: '无效操作'
 						});
 					}
+					break;
+				case 'customize':
+					if (e.application && e.operate_service) {
+						const url = this.getServiceUrl(e.application, e.operate_service, 'operate');
+						const req = [
+							{
+								data: [e.requestData],
+								serviceName: e.operate_service,
+								srvApp: e.application
+							}
+						];
+						let res = await this.$http.post(url, req);
+						if (res.data.state === 'SUCCESS') {
+							uni.showModal({
+								title: '提示',
+								content: e.tip_msg ? e.tip_msg : res.data.resultMessage,
+								showCancel: false,
+								success(res) {
+									if (res.confirm) {
+										setTimeout(() => {
+											uni.navigateBack();
+										}, 2000);
+									}
+								}
+							});
+						} else {
+							uni.showToast({
+								title: res.data.resultMessage,
+								mask: false,
+								icon: 'none'
+							});
+						}
+					}
+					break;
+				default:
+					uni.showToast({
+						title: e.button_name
+					});
 					break;
 			}
 		}
@@ -536,14 +696,6 @@ export default {
 	background-color: #c4e5ff !important;
 	.cu-item {
 		opacity: 0;
-		.button-box {
-			uni-view {
-				flex: 1;
-			}
-			/deep/ .cu-btn {
-				width: 300rpx;
-			}
-		}
 		&.show {
 			opacity: 1;
 			transition: all 2s;

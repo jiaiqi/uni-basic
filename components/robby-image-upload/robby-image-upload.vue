@@ -132,6 +132,10 @@
 								console.log('--->',imagePathArr[i],_self.serverUrl,_self.header,_self.formData)
 								promiseWorkList.push(new Promise((resolve, reject)=>{
 									let remoteUrlIndex = remoteIndexStart + i
+									uni.showLoading({
+										title:'上传中',
+										mask:true
+									})
 									uni.uploadFile({
 										url:_self.serverUrl,
 										header: _self.header,
@@ -144,14 +148,16 @@
 												if(_self.isDestroyed){
 													return
 												}
+												uni.hideLoading()
 												completeImages ++
 												if(_self.showUploadProgress){
-													uni.showToast({
-														title: '上传进度：' + completeImages + '/' + imagePathArr.length,
-														icon: 'none',
-														mask: false,
-														duration: 500
-													});
+													
+													// uni.showToast({
+													// 	title: '上传进度：' + completeImages + '/' + imagePathArr.length,
+													// 	icon: 'none',
+													// 	mask: false,
+													// 	duration: 500
+													// });
 												}
 												console.log('success to upload image: ' + res.data)
 												resolve(res.data)

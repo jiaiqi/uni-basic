@@ -60,6 +60,10 @@ export default {
 		},
 		fileChange(event) {
 			const self = this;
+			uni.showLoading({
+				title:'正在上传',
+				mask:true
+			})
 			let formData = new FormData();
 			const files = event.target.files;
 			if (files && files[0]) {
@@ -94,10 +98,19 @@ export default {
 							// self.handleProgress(e, file);
 						},
 						onSuccess: res => {
+							uni.hideLoading()
+							uni.showToast({
+								title:'上传成功'
+							})
 							self.handleSuccess(res, file);
 						},
 						onError: (err, response) => {
 							// self.handleError(err, response, file);
+							uni.hideLoading()
+							uni.showToast({
+								title:'上传失败',
+								icon:'none'
+							})
 						}
 					});
 				}

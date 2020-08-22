@@ -32,7 +32,7 @@ export default {
 			loadedType: 'srvV2',
 			colsV2Data: null,
 			type: '',
-			serviceName: '',
+			serviceName: 'srvspocp_store_select',
 			condition: [],
 			defaultCondition: [],
 			params: {},
@@ -87,14 +87,7 @@ export default {
 			return buttons;
 		}
 	},
-	created() {
-		// #ifdef H5
-		const destApp = this.$route.query.destApp;
-		if (destApp) {
-			uni.setStorageSync('activeApp', destApp);
-		}
-		// #endif
-	},
+	
 	onShow() {
 		// let self = this;
 		// let condition = this.condition;
@@ -138,20 +131,22 @@ export default {
 		// }
 	},
 	onLoad() {
-		this.serviceName = 'srvspocp_merchant_user_reg';
+		uni.setStorageSync('activeApp', 'spocp');
+		this.serviceName = 'srvspocp_store_select';
+		// this.serviceName = 'srvspocp_merchant_user_reg';
 		this.type = 'add';
 		this.setBackUrl();
 		this.selectRealNameInfo().then(res => {
 			if (res) {
-				if (res.data && res.data.status === 'success' && res.data._merchant_user) {
+				if (res.data && res.status === 'success' && res._merchant_user) {
 					uni.showModal({
 						title: '提示',
-						content: '您已经是商户负责人了,即将跳转到用户首页',
+						content: '您已经是商户负责人了,即将跳转商户主页',
 						showCancel: false,
 						success(res) {
 							if (res.confirm) {
 								uni.redirectTo({
-									url: '/pages/specific/index/index'
+									url: '/pages/specific/merchant/merchant'
 								});
 							}
 						}
@@ -160,9 +155,10 @@ export default {
 					this.getFieldsV2(this.condition);
 				}
 			} else {
+				this.setBackUrl();
 				uni.showModal({
 					title: '提示',
-					content: '请先进行实名认证',
+					content: '您未进行实名认证，点击确定按钮进行认证',
 					showCancel: false,
 					success(res) {
 						if (res.confirm) {
@@ -173,7 +169,7 @@ export default {
 					}
 				});
 			}
-		}); 
+		});
 	},
 
 	methods: {
@@ -262,7 +258,7 @@ export default {
 			}
 		},
 		async selectList(item) {
-			let app = uni.getStorageSync('activeApp');
+			let app = 'spocp';
 			let url = this.getServiceUrl(app, item.service_name, 'select');
 			let formData = this.defaultVal;
 			if (item.foreign_key && item.foreign_key.referenced_column_name && formData[item.foreign_key.referenced_column_name]) {
@@ -284,12 +280,12 @@ export default {
 			}
 		},
 		getFieldsV2: async function(condition) {
-			let app = uni.getStorageSync('activeApp');
+			let app = 'spocp';
 			let type = '';
 			if (this.formDisabled) {
 				type = 'detail';
 			}
-			let colVs = await this.getServiceV2(this.serviceName, 'reg', type ? type : this.type, app);
+			let colVs = await this.getServiceV2(this.serviceName, 'add', type ? type : this.type, app);
 			if (!colVs) {
 				return;
 			}
@@ -487,7 +483,7 @@ export default {
 		// },
 		async getDetailfieldModel() {
 			let params = this.deepClone(this.params);
-			let app = uni.getStorageSync('activeApp');
+			let app = 'spocp';
 			params.serviceName = params.serviceName.replace('_update', '_select').replace('_add', '_select');
 			let url = this.getServiceUrl(app, params.serviceName, 'select');
 			const req = {
@@ -517,21 +513,22 @@ export default {
 								req[item] = req[item].toString();
 							}
 						});
-						req = [{ serviceName: 'srvspocp_merchant_user_reg', data: [req] }];
-						let app = uni.getStorageSync('activeApp');
-						let url = this.getServiceUrl(app, 'srvspocp_merchant_user_reg', 'operate');
+						let serviceName = 'srvspocp_store_add';
+						req = [{ serviceName: serviceName, data: [req] }];
+						let app = 'spocp';
+						let url = this.getServiceUrl(app, serviceName, 'operate');
 						let res = await this.$http.post(url, req);
 						this.selectRealNameInfo();
 						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
 								title: '提示',
-								content: '提交成功,即将返回首页',
+								content: '提交成功,即将返回商户首页',
 								showCancel: false,
 								success(res) {
 									if (res.confirm) {
 										uni.reLaunch({
-											url: _this.$api.homePath
+											url: '/pages/specific/merchant/merchant'
 										});
 									} else {
 									}

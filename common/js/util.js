@@ -9,7 +9,14 @@ const install = (Vue, options) => {
 	Vue.prototype.$api = { ...config,
 		...api
 	}
-	Vue.prototype.isArray = (e) => {
+	Vue.prototype.iObject = function(e) {
+		if (e) {
+			return Object.prototype.toString.call(e) === "[object Object]"
+		} else {
+			return false
+		}
+	}
+	Vue.prototype.isArray = function(e) {
 		return Array.isArray(e)
 	}
 	// url解码
@@ -264,6 +271,11 @@ const install = (Vue, options) => {
 						} catch (e) {
 							//TODO handle the exception
 						}
+					}else{
+						fieldInfo.fileNum = 1
+						fieldInfo.moreConfig = {
+							fieldType: "id_photo"
+						}
 					}
 				}
 				fieldInfo.srvInfo = {
@@ -460,6 +472,280 @@ const install = (Vue, options) => {
 			}
 		})
 		return cols
+	}
+	Vue.prototype.onButtonRequest = function(e) {
+		let btn, row, condition, defaultVal
+		if (e && Vue.prototype.iObject(e) && e.hasOwnProperty("button")) {
+			btn = e.button
+			let params = {
+				"type": "update",
+				"condition": [{
+					"colName": "id",
+					"ruleType": "in",
+					"value": e.hasOwnProperty("row") ? e.row.id : null
+				}],
+				"serviceName": btn.service_name,
+				"defaultVal": null
+			}
+			switch (btn.button_type) {
+				case "edit":
+					if (e.hasOwnProperty("row")) {
+						row = e.row
+						let params = {
+							"type": "update",
+							"condition": [{
+								"colName": "id",
+								"ruleType": "in",
+								"value": row.id
+							}],
+							"serviceName": btn.service_name,
+							"defaultVal": row
+						}
+						console.log("点击了【有效】的公共编辑按钮", row)
+						uni.navigateTo({
+							url: "/pages/formPage/formPage?params=" + JSON.stringify(params)
+						})
+					} else {
+						console.log("点击了【无效】的公共编辑按钮")
+					}
+					//代码块
+					break;
+				case "delete":
+					return new Promise((resolve, reject) => {
+						uni.showModal({
+							content: "是否确认删除操作？",
+							success: function(res) {
+								if (res.confirm) {
+									console.log('用户点击确定');
+									let req = [{
+										"serviceName": params.serviceName,
+										"colNames": ["*"],
+										"condition": params.condition
+									}]
+									Vue.prototype.onRequest("delete", params.serviceName, req).then((res) => {
+										if (res.data.state === "SUCCESS") {
+
+											resolve(res.data)
+											// uni.showToast({
+											// 	title:e.button.button_name
+											// })
+										} else {
+											reject(res.data)
+										}
+
+									})
+								} else if (res.cancel) {
+									resolve('用户点击取消')
+								}
+							}
+						})
+					})
+					//代码块
+					break;
+				case "add":
+					//代码块
+					break;
+				default:
+					//默认代码块
+			}
+		}
+	}
+	/**
+	 * 按钮跳转的统一处理
+	 * 
+	 */
+	Vue.prototype.onButtonToUrl = function(e) {
+		console.log("onButtonToUrl", e)
+		let btn, row, condition, defaultVal
+		if (e && Vue.prototype.iObject(e)) {
+			btn = e.button
+			if (btn.is_public) {
+				switch (btn.button_type) {
+					case "edit":
+						if (e.hasOwnProperty("row")) {
+							row = e.row
+							let params = {
+								"type": "update",
+								"condition": [{
+									"colName": "id",
+									"ruleType": "in",
+									"value": row.id
+								}],
+								"serviceName": btn.service_name,
+								"defaultVal": row
+							}
+							console.log("点击了【有效】的公共编辑按钮", row)
+							uni.navigateTo({
+								url: "/pages/formPage/formPage?params=" + JSON.stringify(params)
+							})
+						} else {
+							console.log("点击了【无效】的公共编辑按钮")
+						}
+						return new Promise((resolve, reject) => {
+							resolve("跳转")
+
+						})
+						//代码块
+						break;
+					case "delete":
+						return new Promise((resolve, reject) => {
+							Vue.prototype.onButtonRequest(e).then((res) => {
+								if (res) {
+									resolve(res)
+								} else {
+									reject(res)
+								}
+							})
+						})
+						//代码块
+						break;
+					case "add":
+						//代码块
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
+						break;
+					case "detail":
+						if (e.hasOwnProperty("row")) {
+							row = e.row
+							let params = {
+								"type": "detail",
+								"condition": [{
+									"colName": "id",
+									"ruleType": "in",
+									"value": row.id
+								}],
+								"serviceName": btn.service_name,
+								"defaultVal": row
+							}
+							console.log("点击了【有效】的公共编辑按钮", row)
+							uni.navigateTo({
+								url: "/pages/formPage/formPage?params=" + JSON.stringify(params)
+							})
+						} else {
+							console.log("点击了【无效】的公共编辑按钮")
+						}
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
+						break;
+					default:
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
+						//默认代码块
+				}
+			} else {
+				switch (btn.button_type) {
+					case "detail":
+						if (e.hasOwnProperty("row")) {
+							row = e.row
+							let params = {
+								"type": "detail",
+								"condition": [{
+									"colName": "id",
+									"ruleType": "in",
+									"value": row.id
+								}],
+								"serviceName": btn.service_name,
+								// "defaultVal": row
+							}
+							console.log("点击了【有效】的公共编辑按钮", row)
+							uni.navigateTo({
+								url: "/pages/formPage/formPage?params=" + JSON.stringify(params)
+							})
+						} else {
+							console.log("点击了【无效】的公共编辑按钮")
+						}
+					case "customize":
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
+						// }
+						break;
+					case "delete":
+						//代码块
+						break;
+					case "add":
+						//代码块
+						break;
+					default:
+						//默认代码块
+				}
+			}
+			console.log("btn", btn)
+		} else {
+			uni.showToast({
+				title: "参数错误"
+			})
+		}
+	}
+	Vue.prototype.getCascaderText = async function(fieldData) {
+		let cond = [{
+			colName: fieldData.srvInfo.refed_col,
+			ruleType: 'eq',
+			value: fieldData.value
+		}];
+		if (!fieldData.value) {
+			return;
+		}
+		let self = this;
+		let req = {
+			serviceName: fieldData.option_list_v2 ? fieldData.option_list_v2.serviceName : '',
+			colNames: ['*']
+		};
+		if (cond) {
+			req.condition = cond;
+		}
+		let option_list_v2 = fieldData.option_list_v2;
+		if (option_list_v2.is_tree === true) {
+			req['treeData'] = true;
+		}
+		let appName = '';
+		if (fieldData.option_list_v2 && fieldData.option_list_v2.srv_app) {
+			appName = fieldData.option_list_v2.srv_app;
+		} else {
+			appName = uni.getStorageSync('activeApp');
+		}
+		let res = await self.onRequest('select', req.serviceName, req, appName);
+		if (res.data.state == 'SUCCESS' && res.data.data.length > 0) {
+			fieldData.showText = res.data.data[0][fieldData.srvInfo.key_disp_col];
+			fieldData.colData = res.data.data[0];
+			return {
+				colData: fieldData.colData,
+				showText: fieldData.showText
+			}
+		}
+	}
+	Vue.prototype.setFieldsDefaultVal = function(field, values) {
+		if (Vue.prototype.isArray(field) && Vue.prototype.iObject(values)) {
+			for (let i = 0; i < field.length; i++) {
+				for (let key in values) {
+					if (field[i].col_type === 'Set' && field[i].value) {
+						if (typeof field[i].value === 'string') {
+							field[i].value = field[i].value.split(',')
+						}
+					}
+					if (field[i].column === key) {
+						field[i].value = values[key]
+						field[i].defaultValue = values[key]
+						if (field[i].type === 'cascader') {
+							Vue.prototype.getCascaderText(field[i]).then(res => {
+								if (res) {
+									field[i].showText = res.showText
+									field[i].colData = res.colData
+								}
+							})
+						}
+
+					}
+				}
+			}
+			console.log('1111', field, values)
+			return field
+		} else {
+			return false
+		}
 	}
 	// 获取图片路径
 	Vue.prototype.getFilePath = async function(e) {
@@ -713,6 +999,28 @@ const install = (Vue, options) => {
 			}
 		}
 	}
+	Vue.prototype.selectMerchantInfo = async () => {
+		let user_no = uni.getStorageSync('login_user_info').user_no
+		if (user_no) {
+			// create_user
+			const url = Vue.prototype.getServiceUrl('spocp', 'srvspocp_store_select', 'select');
+			let req = {
+				serviceName: 'srvspocp_store_select',
+				colNames: ['*'],
+				condition: [{
+					colName: "create_user",
+					ruleType: "eq",
+					value: user_no
+				}]
+			};
+			let res = await Vue.prototype.$http.post(url, req);
+			if (res.data.state == 'SUCCESS' && res.data.data.length > 0) {
+				return res.data.data[0]
+			} else {
+				return false
+			}
+		}
+	}
 	Vue.prototype.selectRealNameInfo = async function(num = 0) {
 		// 从实名认证信息表中查找当前帐号是否有实名认证信息
 		const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
@@ -733,46 +1041,66 @@ const install = (Vue, options) => {
 				ruleType: 'eq'
 			}];
 		} else {
-			console.warn('未发现当前用户登录信息');
-			return;
+			console.warn('当前用户未进行实名认证');
+			// return;
 		}
-		if ((num || num === 0) && num > 3) {
+		if (num && num > 3) {
 			uni.setStorageSync('realNameInfo', {
 				sataus: 'fail',
 				msg: `查询到用户实名信息失败三次及三次以上`
 			});
 			return false;
 		}
-		let res = await this.$http.post(url, req);
+		let res = await Vue.prototype.$http.post(url, req);
 		if (res.data.state === 'SUCCESS') {
 			if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
 				let realNameInfo = {
 					status: 'success',
 					data: res.data.data[0],
-					_merchant_user: res.data._merchant_user
+					user: res.data.data[0]
+				}
+
+				let merchantInfo = await Vue.prototype.selectMerchantInfo()
+				if (merchantInfo) {
+					realNameInfo.merchant = merchantInfo
+					realNameInfo._merchant_user = merchantInfo
+				} else if (res.data._merchant_user && Object.keys(res.data._merchant_user).length > 0) {
+					realNameInfo.employeeInfo = res.data._merchant_user
 				}
 				uni.setStorageSync('realNameInfo', realNameInfo);
 				console.log('用户信息:', realNameInfo);
-				return realNameInfo;
+				return Vue.prototype.deepClone(realNameInfo);
 			} else {
 				console.log('未查询到用户实名信息:', res.data);
 				uni.setStorageSync('realNameInfo', {
 					sataus: 'fail',
 					msg: '未查询到用户实名信息'
 				});
-				uni.showModal({
-					title: '提示',
-					content: '未发现当前登录用户实名认证信息,点击确定按钮进行实名认证',
-					showCancel: false,
-					success(res) {
-						if (res.confirm) {
-							Vue.prototype.setBackUrl()
-							uni.redirectTo({
-								url: '/pages/specific/addInfo/addInfo'
-							});
-						}
+				let path = window.location.href
+				// ?及?之后的字符
+				let query = window.location.search
+				let index = path.lastIndexOf('/pages/')
+				if (index !== -1) {
+					let backUrl = path.substring(index) + query
+					if (backUrl.indexOf('/addInfo/addInfo') !== -1) {
+						return
+					} else {
+						uni.setStorageSync('backUrl', backUrl)
+						uni.showModal({
+							title: '提示',
+							content: '您未进行实名认证，点击确定按钮进行认证',
+							showCancel: false,
+							success(res) {
+								if (res.confirm) {
+									uni.redirectTo({
+										url: '/pages/specific/addInfo/addInfo'
+									});
+								}
+							}
+						});
 					}
-				});
+				}
+
 			}
 		} else {
 			uni.setStorageSync('realNameInfo', {
@@ -781,10 +1109,10 @@ const install = (Vue, options) => {
 			});
 			num += 1;
 			this.selectRealNameInfo(num);
-			uni.showToast({
-				title: res.data.resultMessage,
-				icon: 'none'
-			});
+			// uni.showToast({
+			// 	title: res.data.resultMessage,
+			// 	icon: 'none'
+			// });
 		}
 	}
 	Vue.prototype.setBackUrl = function() {

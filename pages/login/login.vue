@@ -63,13 +63,23 @@ export default {
 				this.selectRealNameInfo().then(res => {
 					if (backUrl && backUrl !== '/' && backUrl !== '/ymt/') {
 						console.log('即将跳转到backUrl页面', backUrl);
-						uni.redirectTo({
+						uni.reLaunch({
 							url: backUrl
 						});
+						// uni.redirectTo({
+						// 	url: backUrl
+						// });
 					} else {
 						console.log('即将跳转到homePath');
 						uni.redirectTo({
-							url: this.$api.homePath
+							url: this.$api.homePath,
+							fail(res) {
+								if (res.errMsg) {
+									if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
+										window.location.href = _this.$api.homePath;
+									}
+								}
+							}
 						});
 					}
 				});
@@ -185,7 +195,14 @@ export default {
 							});
 						} else {
 							uni.reLaunch({
-								url: _this.$api.homePath
+								url: _this.$api.homePath,
+								fail(res) {
+									if (res.errMsg) {
+										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
+											window.location.href = _this.$api.homePath;
+										}
+									}
+								}
 							});
 						}
 					});
@@ -199,72 +216,7 @@ export default {
 				}
 			});
 		},
-		// async selectRealNameInfo(num = 0) {
-		// 	// 从实名认证信息表中查找当前帐号是否有实名认证信息
-		// 	const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
-		// 	let user_info = uni.getStorageSync('login_user_info');
-		// 	let req = { serviceName: 'srvspocp_auth_personal_info_select', colNames: ['*'], condition: [{}], page: { pageNo: 1, rownumber: 10 }, order: [] };
-		// 	if (user_info.user_no) {
-		// 		req.condition = [
-		// 			{
-		// 				colName: 'auth_user_no',
-		// 				value: user_info.user_no,
-		// 				ruleType: 'eq'
-		// 			}
-		// 		];
-		// 	} else {
-		// 		console.warn('未发现当前用户登录信息');
-		// 		return;
-		// 	}
-		// 	if ((num || num === 0) && num > 3) {
-		// 		uni.setStorageSync('realNameInfo', {
-		// 			sataus: 'fail',
-		// 			msg: `查询到用户实名信息失败三次及三次以上`
-		// 		});
-		// 		return;
-		// 	}
-		// 	let res = await this.$http.post(url, req);
-		// 	if (res.data.state === 'SUCCESS') {
-		// 		debugger
-		// 		if (res.data.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
-		// 			uni.setStorageSync('realNameInfo', {
-		// 				status: 'success',
-		// 				data: res.data.data[0],
-		// 				_merchant_user:res.data._merchant_user
-		// 			});
-		// 			console.log('用户信息:', res.data.data[0]);
-		// 			return res.data.data[0];
-		// 		} else {
-		// 			console.log('未查询到用户实名信息:', res.data);
-		// 			uni.setStorageSync('realNameInfo', {
-		// 				sataus: 'fail',
-		// 				msg: '未查询到用户实名信息'
-		// 			});
-		// 			uni.showModal({
-		// 				title: '提示',
-		// 				content: '未发现当前登录用户实名认证信息,点击确定跳转到实名认证页面',
-		// 				success(res) {
-		// 					if (res.confirm) {
-		// 						uni.redirectTo({
-		// 							url: '/pages/specific/addInfo/addInfo'
-		// 						});
-		// 					}
-		// 				}
-		// 			});
-		// 		}
-		// 	} else {
-		// 		uni.setStorageSync('realNameInfo', {
-		// 			sataus: 'fail',
-		// 			msg: `查询到用户实名信息失败${num}次`
-		// 		});
-		// 		num += 1;
-		// 		this.selectRealNameInfo(num);
-		// 		uni.showToast({
-		// 			title: res.data.resultMessage,
-		// 			icon: 'none'
-		// 		});
-		// 	}
-		// },
+		
 		loginAndAuth(e) {
 			//登录并授权
 			console.log(e);
@@ -308,7 +260,7 @@ export default {
 				let backUrl = uni.getStorageSync('backUrl');
 				console.log(backUrl, 'backUrl');
 				this.selectRealNameInfo();
-				this.getWxUserInfo()
+				this.getWxUserInfo();
 				if (backUrl) {
 					// uni.navigateTo({
 					// 	url: backUrl

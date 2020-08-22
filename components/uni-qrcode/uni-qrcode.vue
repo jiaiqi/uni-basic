@@ -56,7 +56,6 @@
 		},
 		methods: {
 			async make() {
-				
 				var options = {
 					canvasId: this.cid,
 					componentInstance: this,
@@ -71,11 +70,9 @@
 				if (this.backgroundImage) {
 					filePath = await this.drawBackgroundImageSync(filePath)
 				}
-
 				if (this.logo) {
 					filePath = await this.drawLogoSync(filePath)
 				}
-
 				this.makeComplete(filePath)
 			},
 			makeComplete(filePath) {
@@ -83,11 +80,8 @@
 			},
 			drawBackgroundImage(options) {
 				var ctx = uni.createCanvasContext(this.cid, this)
-
 				ctx.drawImage(this.backgroundImage, 0, 0, this.size, this.size)
-
 				ctx.drawImage(options.filePath, 0, 0, this.size, this.size)
-
 				ctx.draw(false, () => {
 					uni.canvasToTempFilePath({
 						canvasId: this.cid,
@@ -132,22 +126,16 @@
 			},
 			drawLogo(options) {
 				var ctx = uni.createCanvasContext(this.cid, this)
-
 				ctx.drawImage(options.filePath, 0, 0, this.size, this.size)
-
 				var logoSize = this.size / 4
 				var logoX = this.size / 2 - logoSize / 2
 				var logoY = logoX
-
 				var borderSize = logoSize + 10
 				var borderX = this.size / 2 - borderSize / 2
 				var borderY = borderX
 				var borderRadius = 5
-
 				this.fillRoundRect(ctx, borderRadius, borderX, borderY, borderSize, borderSize)
-
 				ctx.drawImage(this.logo, logoX, logoY, logoSize, logoSize)
-				
 				ctx.draw(false, () => {
 					uni.canvasToTempFilePath({
 						canvasId: this.cid,

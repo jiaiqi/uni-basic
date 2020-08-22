@@ -105,7 +105,7 @@
 				<view v-else-if="fieldData.type === 'images'">
 					<robby-image-upload
 						:value="imagesUrl"
-						:enable-del="fieldData.disabled ? !fieldData.disabled : true"
+						:enable-del="false"
 						:enable-add="fieldData.disabled ? !fieldData.disabled : true"
 						:server-url="upLoadUrl"
 						@delete="deleteImage"
@@ -818,8 +818,7 @@ export default {
 			if (e.response.file_no) {
 				this.fieldData.value = e.response.file_no;
 			}
-			debugger
-			if (this.fieldData.moreConfig && this.fieldData.moreConfig.fieldType === 'id_photo' &&e.response.file_no) {
+			if (this.fieldData.moreConfig && this.fieldData.moreConfig.fieldType === 'id_photo' && e.response.file_no) {
 				this.toOCR(e.response.file_no);
 			}
 		},
@@ -845,28 +844,40 @@ export default {
 		},
 		async toOCR(file_no) {
 			// ocr识别身份证信息
-			// let _this = this;
-			// const reqUrl = _this.getServiceUrl('daq', 'srvdaq_orc_text_extraction', 'operate');
-			// const reqData = [
-			// 	{
-			// 		serviceName: 'srvdaq_orc_text_extraction',
-			// 		data: [
-			// 			{
-			// 				file_no: file_no
-			// 			}
-			// 		]
-			// 	}
-			// ];
-			// let res = await _this.$http.post(reqUrl, reqData);
-			// // 得到识别的文字
-			// if (response.data.state === 'SUCCESS') {
-			// 	const resp = response.data.response[0].response;
-			// 	console.log(response.data.response);
-			// 	this.$emit("ocrInfo",resp)
-			// } else {
-			// 	console.log(response.data.resultMessage);
-			// }
-			this.$emit('ocrInfo', '');
+			if (!file_no) {
+				uni.showToast({
+					title: '获取图片失败',
+					icon: 'none'
+				});
+				return;
+			}
+			let _this = this;
+			uni.showLoading({
+				title:'正在识别',
+				mask:true
+			})
+			// /daq/operate/srvdaq_orc_idcard_extraction
+			const reqUrl = _this.getServiceUrl('daq', 'srvdaq_orc_idcard_extraction', 'operate');
+			const reqData = [
+				{
+					serviceName: 'srvdaq_orc_idcard_extraction',
+					data: [
+						{
+							file_no: file_no
+						}
+					]
+				}
+			];
+			let response = await _this.$http.post(reqUrl, reqData);
+			// 得到识别的文字
+			uni.hideLoading()
+			if (response.data.state === 'SUCCESS') {
+				const resp = response.data.response[0].response;
+				console.log(response.data.response);
+				this.$emit('ocrInfo', resp);
+			} else {
+				console.log(response.data.resultMessage);
+			}
 		},
 		onButtons(e, b) {
 			let item = e;

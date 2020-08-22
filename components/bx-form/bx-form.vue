@@ -42,13 +42,15 @@
 						</u-radio-group>
 						<!-- <u-input v-model="ocrInfo.sex"/> -->
 					</u-form-item>
+					<u-form-item label="出生日期"><u-input @click="showDatePicker = true" disabled v-model="ocrInfo.birth" /></u-form-item>
+					<u-picker mode="time" v-model="showDatePicker" :params="datePickerParams" @confirm="datePickerConfirm" default-time="1992-01-01"></u-picker>
 					<u-form-item label="身份证号"><u-input v-model="ocrInfo.idNo" /></u-form-item>
 					<u-form-item label="住址"><u-input v-model="ocrInfo.address" /></u-form-item>
 				</u-form>
-				<view class="warn-text">是否使用以上信息覆盖已填写内容？</view>
+				<view class="warn-text">点击确定使用以上信息覆盖已填写内容？</view>
 				<view class="button-box">
 					<button class="button cu-btn bg-blue" type="primary" @click="coverageInfo(true)">确定</button>
-					<button class="button cu-btn" type="default" @click="hideOcrPopup">算了</button>
+					<!-- <button class="button cu-btn" type="default" @click="hideOcrPopup">算了</button> -->
 				</view>
 			</view>
 		</uni-popup>
@@ -59,10 +61,10 @@
 import formItem from '@/components/bx-form/bx-form-item.vue';
 import evaluatorTo from '@/common/js/evaluator.js';
 import calculateTo from '@/common/js/calculate.js';
-import uniPopup from '@/components/uni-popup/uni-popup.vue'
+import uniPopup from '@/components/uni-popup/uni-popup.vue';
 export default {
 	name: 'bx-form',
-	components: { formItem,uniPopup },
+	components: { formItem, uniPopup },
 	props: {
 		fields: {
 			type: Array,
@@ -140,7 +142,16 @@ export default {
 				{
 					label: '女'
 				}
-			]
+			],
+			showDatePicker: false,
+			datePickerParams: {
+				year: true,
+				month: true,
+				day: true,
+				hour: false,
+				minute: false,
+				second: false
+			}
 		};
 	},
 	created() {
@@ -161,16 +172,28 @@ export default {
 		}
 	},
 	methods: {
+		datePickerConfirm(e) {
+			console.log(e);
+			this.ocrInfo.birth = `${e.year}-${e.month}-${e.day}`;
+		},
 		getOcrInfo(e) {
 			// 拿到ocr接口返回的数据
-			let ocrInfo = {
-				name: 'ocrName',
-				sex: '男',
-				idNo: 'ocr_card_no',
-				address: 'ocr_address'
-			};
-			this.ocrInfo = ocrInfo;
-			this.$refs.ocrPopup.open();
+			if (e) {
+				let date = '';
+				if (e.birth) {
+					date = e.birth;
+					date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
+				}
+				let ocrInfo = {
+					name: e.name,
+					sex: e.sex,
+					idNo: e.idcard,
+					address: e.address,
+					birth: date
+				};
+				this.ocrInfo = ocrInfo;
+				this.$refs.ocrPopup.open();
+			}
 		},
 		hideOcrPopup() {
 			// 隐藏ocr弹出框
@@ -182,18 +205,30 @@ export default {
 				if (item.column === 'name' && this.ocrInfo.name) {
 					item.value = this.ocrInfo.name;
 					this.fieldModel.name = this.ocrInfo.name;
+					item.disabled = true;
+				}
+				if (item.column === 'date_of_birth' && this.ocrInfo.birth) {
+					item.value = this.ocrInfo.birth;
+					this.fieldModel.date_of_birth = this.ocrInfo.birth;
+					item.disabled = true;
 				}
 				if (item.column === 'sex' && this.ocrInfo.sex) {
 					item.value = this.ocrInfo.sex;
 					this.fieldModel.sex = this.ocrInfo.sex;
+					this.ocrInfo.birth;
+					item.disabled = true;
 				}
 				if (item.column === 'id_card' && this.ocrInfo.idNo) {
 					item.value = this.ocrInfo.idNo;
 					this.fieldModel.id_card = this.ocrInfo.idNo;
+					this.ocrInfo.birth;
+					item.disabled = true;
 				}
 				if (item.column === 'address' && this.ocrInfo.address) {
 					item.value = this.ocrInfo.address;
 					this.fieldModel.address = this.ocrInfo.address;
+					this.ocrInfo.birth;
+					item.disabled = true;
 				}
 			});
 			if (dontHide === true) {
@@ -532,7 +567,8 @@ export default {
 	}
 	.button-box {
 		display: flex;
-		justify-content: space-between;
+		// justify-content: space-between;
+		justify-content: center;
 		.button {
 			width: calc(50% - 10rpx);
 		}

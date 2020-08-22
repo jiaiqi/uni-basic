@@ -87,15 +87,8 @@ export default {
 			return buttons;
 		}
 	},
-	created() {
-		// #ifdef H5
-		const destApp = this.$route.query.destApp;
-		if (destApp) {
-			uni.setStorageSync('activeApp', destApp);
-		}
-		// #endif
-	},
 	onShow() {
+		uni.setStorageSync('activeApp', 'spocp');
 		// let self = this;
 		// let condition = this.condition;
 		// if (this.type === 'detail' || this.type === 'update') {
@@ -140,10 +133,9 @@ export default {
 	onLoad() {
 		this.serviceName = 'srvspocp_merchant_user_reg';
 		this.type = 'add';
-		this.setBackUrl();
 		this.selectRealNameInfo().then(res => {
 			if (res) {
-				if (res.data && res.data.status === 'success' && res.data._merchant_user) {
+				if (res.data && res.status === 'success' && res._merchant_user&&typeof res._merchant_user ==='object'&&Object.keys(res._merchant_user).length>0) {
 					uni.showModal({
 						title: '提示',
 						content: '您已经是商户负责人了,即将跳转到用户首页',
@@ -162,7 +154,7 @@ export default {
 			} else {
 				uni.showModal({
 					title: '提示',
-					content: '请先进行实名认证',
+					content: '您未进行实名认证，点击确定按钮进行认证',
 					showCancel: false,
 					success(res) {
 						if (res.confirm) {

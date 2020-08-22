@@ -42,7 +42,9 @@
 			"style": {}
 		}, {
 			"path": "pages/specific/merchantReg/merchantReg",
-			"style": {}
+			"style": {
+				"navigationBarTitleText": "商家注册"
+			}
 		}, {
 			"path": "pages/specific/merchantList/merchantList",
 			"style": {
@@ -64,33 +66,50 @@
 		{
 			"path": "pages/specific/couponList/couponList",
 			"style": {
-				// "navigationBarTitleText":"优惠券列表",
-				"navigationStyle": "custom",
-				"navigationBarTextStyle": "white"
+				"navigationBarTitleText": "优惠券使用"
 			}
 		},
 		{
 			"path": "pages/specific/couponUsage/couponUsage",
 			"style": {
-				"navigationBarTitleText": "优惠券使用"
 			}
 		}, {
 			"path": "pages/specific/qrcodeDetail/qrcodeDetail",
 			"style": {}
+		}, {
+			"path": "pages/specific/qrCode/qrCode",
+			"style": {
+				"navigationBarTitleText": "个人信息二维码"
+			}
+		}, {
+			"path": "pages/specific/index/index",
+			"style": {}
+		}, {
+			"path": "pages/specific/merchant/merchant",
+			"style": {
+				"navigationBarTitleText": "商家中心"
+			}
+		}, {
+			"path": "pages/specific/usedCoupon/usedCoupon",
+			"style": {
+				"navigationBarTitleText": "已核销优惠券"
+			}
+		}, {
+			"path": "pages/specific/merchantDetail/merchantDetail",
+			"style": {
+				"navigationBarTitleText": "商家详情"
+			}
+		}, {
+			"path": "pages/public/normal/formPage/formPage",
+			"style": {
+				"navigationBarTitleText": "商家详情"
+			}
 		}
-	    ,{
-            "path" : "pages/specific/qrCode/qrCode",
-            "style" : {}
-        }
-        ,{
-            "path" : "pages/specific/index/index",
-            "style" : {}
-        }
-    ],
+	],
 	"globalStyle": {
 		"navigationStyle": "custom",
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "uni-basic",
+		// "navigationBarTitleText": "uni-basic",
 		"navigationBarBackgroundColor": "#1abc9c",
 		"backgroundColor": "#F8F8F8"
 	},

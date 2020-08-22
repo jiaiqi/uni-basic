@@ -21,10 +21,10 @@ fly.interceptors.request.use((request) => {
 		console.log("bxAuthTicket", bxAuthTicket)
 		request.headers["bx_auth_ticket"] = bxAuthTicket
 	} else {
-		uni.showToast({
-			title: '没有bx_auth_ticket' + config.ticket,
-			icon: "none"
-		})
+		// uni.showToast({
+		// 	title: '没有bx_auth_ticket' + config.ticket,
+		// 	icon: "none"
+		// })
 		uni.setStorageSync('isLogin', false)
 	}
 	const outTime = uni.getStorageSync("expire_timestamp") //过期时间
@@ -87,26 +87,26 @@ fly.interceptors.response.use(
 				})
 			}
 			// }
-		} else if (res.data.resultCode === '0000' || res.data.state === 'FAILURE') {
+		} else if (res.data.resultCode === '0000' && res.data.state === 'FAILURE') {
 			// 没有访问权限
 			uni.setStorageSync('isLogin', false)
 			uni.showToast({
 				title: data.resultMessage
 			})
-			let path = window.location.pathname
-			// ?及?之后的字符
-			let query = window.location.search
-			let index = path.lastIndexOf('/pages/')
-			if (index !== -1) {
-				let backUrl = path.substring(index) + query
-				uni.setStorageSync('backUrl', backUrl)
-				uni.redirectTo({
-					url: '/pages/login/login'
-				})
-			} else {
-				// alert('没有backurl6' + path);
-				console.log('没有backurl6' + path);
-			}
+			// let path = window.location.pathname
+			// // ?及?之后的字符
+			// let query = window.location.search
+			// let index = path.lastIndexOf('/pages/')
+			// if (index !== -1) {
+			// 	let backUrl = path.substring(index) + query
+			// 	uni.setStorageSync('backUrl', backUrl)
+			// 	uni.redirectTo({
+			// 		url: '/pages/login/login'
+			// 	})
+			// } else {
+			// 	// alert('没有backurl6' + path);
+			// 	console.log('没有backurl6' + path);
+			// }
 		} else {
 			uni.setStorageSync('stophttp', false)
 			let backUrl = uni.getStorageSync('backUrl')

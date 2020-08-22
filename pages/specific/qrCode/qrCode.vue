@@ -1,182 +1,179 @@
 <template>
-	<view class="content">
-		<view class="top"></view>
+	<view class="content" v-if="qrCodeData">
+		<!-- <view class="top"></view> -->
+		<view class="title">智慧宝塔一码通</view>
 		<view class="banner">
 			<dl>
-				<dt><image src="/static/img/logo.png" mode=""></image></dt>
-				<dd>私塾圈</dd>
+				<dt><image style="margin-top: -80upx;" :src="wxUserInfo.headimgurl" mode=""></image></dt>
+				<dd>{{ wxUserInfo.nickname }}</dd>
 			</dl>
-			<view class="img"><image src="/static/img/ewm.jpg" mode=""></image></view>
+			<view class="img">
+				<!-- <image src="/static/img/ewm.jpg" mode=""> -->
+				<uni-qrcode
+					v-if="qrCodeData"
+					style="opacity: 0;"
+					v-show="isShow"
+					cid="qrcode"
+					:text="qrCodeData.qr_code_str"
+					:size="size"
+					:logo="logo"
+					makeOnLoad
+					@makeComplete="makeComplete"
+				></uni-qrcode>
+				<view v-else class="perch"></view>
+				<image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image>
+			</view>
 			<view class="tgtit">
-				推广链接：
-				<text class="tugurl">http://sishuquan.com?id=3228969</text>
+				<text class="left_text">更新于 {{ qrCodeData.nowTime ? qrCodeData.nowTime : qrCodeData.expired_date }}</text>
+				<text @click="refreshCode" class="lg text-blue cuIcon-refresh right_text" :class="isRefresh ? 'refresh' : ''"></text>
+				<!-- 推广链接：
+				<text class="tugurl">http://sishuquan.com?id=3228969</text> -->
 			</view>
 			<view class="sharbuttn">
-				<view class="btn" @click="save">保存二维码</view>
-				<view class="btn" @click="sharurl">复制推广链接</view>
-			</view>
-
-			<!-- <button class="btn" @click="share">分享</button> -->
-			<view class="shartitle"><view>分享</view></view>
-			<view class="sharapk" @click="share">
-				<view><image src="/static/weact.png"></image></view>
-				<view><image src="/static/shar.png"></image></view>
-				<view><image src="/static/qq.png"></image></view>
-			</view>
-
-			<view class="bottom">
-				<ul>
-					<li>1、好友识别二维码通过手机号进行注册</li>
-					<li>2、也可分享此页面到微信或QQ邀请好友注册</li>
-					<li>3、注册完成后您即可得到相应的积分</li>
-				</ul>
+				<!-- <view class="btn" @click="toDetail('person')">个人信息</view> -->
+				<!-- <view class="btn" @click="toDetail('merchant')">商户信息</view> -->
 			</view>
 		</view>
 	</view>
 </template>
 
 <script>
+import uQRCode from '@/common/uqrcode.js';
+import uniQrcode from '@/components/uni-qrcode/uni-qrcode';
+import formateDate from '@/common/js/function/formatDate.js';
 export default {
+	name: 'qrCodeShow',
+	components: { uniQrcode },
 	data() {
 		return {
 			providerList: [],
 			sourceLink: 'http://yunzhujiao.cn/bind_pub/index.html',
-			type: 0
+			type: 0,
+			qrcodeSrc: '',
+			size: 250,
+			logo: '../../../static/logo.png',
+			qrCodeData: '',
+			isRefresh: false,
+			isShow: true,
+			a: '151',
+			textIsShow: false,
+			qrtimer: '',
+			wxUserInfo: uni.getStorageSync('backWxUserInfo')
 		};
 	},
 	onLoad() {
-		this.version = plus.runtime.version;
-		uni.getProvider({
-			service: 'share',
-			success: e => {
-				let data = [];
-				for (let i = 0; i < e.provider.length; i++) {
-					switch (e.provider[i]) {
-						case 'weixin':
-							data.push({
-								name: '分享到微信好友',
-								id: 'weixin'
-							});
-							data.push({
-								name: '分享到微信朋友圈',
-								id: 'weixin',
-								type: 'WXSenceTimeline'
-							});
-							break;
-						case 'qq':
-							data.push({
-								name: '分享到QQ',
-								id: 'qq'
-							});
-							break;
-						default:
-							break;
-					}
-				}
-				this.providerList = data;
-			},
-			fail: e => {
-				console.log('获取登录通道失败' + JSON.stringify(e));
+		this.selectRealNameInfo().then(res => {
+			if (res.status === 'success') {
+				// 已经注册
+				this.getQrCodeText();
 			}
 		});
 	},
+	beforeDestroy() {
+		if (this.qrtimer) {
+			clearInterval(this.qrtimer);
+		}
+	},
 	methods: {
-		//复制分享链接
-		sharurl() {
-			uni.setClipboardData({
-				data: 'http://sishuquan.com?id=3228969',
-				success: function() {
-					console.log('success');
-					uni.showModal({
-						title: '复制成功',
-						content: '内容已复制到粘贴板，可前往其他应用粘贴查看。',
-						showCancel: false,
-						success: function(res) {
-							if (res.confirm) {
-								//console.log('用户点击确定');
-							} else if (res.cancel) {
-								//console.log('用户点击取消');
-							}
-						} 
-					});
-				}
-			});
-		},
-		//保存图片到相册
-		save() {
-			uni.showActionSheet({
-				itemList: ['保存图片到相册'],
-				success: () => {
-					plus.gallery.save(
-						'http://pds.jyt123.com/wxtest/logo.png',
-						function() {
-							uni.showToast({
-								title: '保存成功',
-								icon: 'none'
-							});
-						},
-						function() {
-							uni.showToast({
-								title: '保存失败，请重试！',
-								icon: 'none'
-							});
-						}
-					);
-				}
-			});
-		},
-		share(e) {
-			if (this.providerList.length === 0) {
-				uni.showModal({
-					title: '当前环境无分享渠道!',
-					showCancel: false
-				});
-				return;
+		toDetail(e) {
+			console.log(e);
+			let url = '';
+			if (e == 'person') {
+			} else if (e == 'merchant') {
 			}
-			let itemList = this.providerList.map(function(value) {
-				return value.name;
-			});
-
-			console.log(itemList);
-
-			uni.showActionSheet({
-				itemList: itemList,
-				success: res => {
-					console.log(this.providerList[res.tapIndex].id);
-					if (this.providerList[res.tapIndex].id == 'qq') {
-						this.type = 1;
-					} else {
-						this.type = 0;
-					}
-					uni.share({
-						provider: this.providerList[res.tapIndex].id,
-						scene: this.providerList[res.tapIndex].type && this.providerList[res.tapIndex].type === 'WXSenceTimeline' ? 'WXSenceTimeline' : 'WXSceneSession',
-						type: this.type,
-						title: '耘助教',
-						summary: '耘助教是一个在线教育应用平台',
-						imageUrl: 'http://pds.jyt123.com/wxtest/logo.png',
-						href: 'https://m3w.cn/uniapp',
-						success: res => {
-							console.log('success:' + JSON.stringify(res));
-						},
-						fail: e => {
-							uni.showModal({
-								content: e.errMsg,
-								showCancel: false
-							});
-						}
-					});
-				}
-			});
+			if (url) {
+				uni.navigateTo({
+					url: url
+				});
+			}
 		},
-		openLink() {
-			plus.runtime.openWeb(this.sourceLink);
+		/* 点击刷新二维码**/
+		refreshCode() {
+			this.isRefresh = true;
+			this.textIsShow = true;
+			this.a = '112232343';
+			this.getQrCodeText();
+		},
+		/* 获取生成二维码字符串**/
+		async getQrCodeText() {
+			this.isShow = true;
+			this.qrCodeData = '';
+			const url = this.getServiceUrl('spocp', 'srvspocp_qr_code_create', 'operate');
+			const req = [
+				{
+					serviceName: 'srvspocp_qr_code_create',
+					colNames: ['*'],
+					condition: [{ colName: 'qr_code_type', ruleType: 'in', value: '身份信息' }]
+				}
+			];
+			let res = await this.$http.post(url, req);
+			if (res.data.state === 'SUCCESS' && res.data.resultCode === 'SUCCESS') {
+				this.qrCodeData = res.data.response[0].response;
+				let nowTime = new Date();
+				nowTime = formatDate(nowTime, 'YYYY-MM-DD HH:mm:ss');
+				this.qrCodeData.refreshTime = nowTime;
+				this.textIsShow = true;
+				this.isRefresh = false;
+				uni.showLoading({
+					title: '二维码生成中',
+					mask: true
+				});
+				this.qrtimer = setInterval(() => {
+					this.automaticRefreshCode(this.qrCodeData.expired_date);
+				}, 1000);
+			}
+		},
+		/* 二维码生成之后得回调**/
+		makeComplete(e) {
+			uni.hideLoading();
+			this.qrcodeSrc = e;
+			this.isShow = false;
+			console.log('e-------', e);
+		},
+		/* 自动刷新二维码**/
+		automaticRefreshCode(qrCodeTime) {
+			let currDate = new Date().getTime();
+			let expiredDate = new Date(qrCodeTime).getTime();
+			let diffDateTime = expiredDate - currDate;
+			if (currDate < expiredDate && diffDateTime <= 5000) {
+				this.getQrCodeText();
+			}
 		}
 	}
 };
 </script>
 
-<style>
+<style scoped lang="scss">
+.content {
+	width: 100vw;
+	height: 100vh;
+	background-color: #007aff;
+	padding: 20rpx 40rpx;
+	.title {
+		color: #fff;
+		font-size: 40rpx;
+		text-align: center;
+		letter-spacing: 2px;
+		padding: 20rpx 0;
+	}
+	.banner {
+		width: 100%;
+		background-color: #ffffff;
+		border-radius: 10rpx;
+		margin-top: 100rpx;
+		padding: 20rpx;
+		.img {
+			width: 500upx;
+			height: 500upx;
+			/* background-color: red; */
+			margin: 50rpx auto;
+		}
+		.img image {
+			width: 100%;
+			height: 100%;
+		}
+	}
+}
 .tugurl {
 	color: #999;
 }
@@ -184,61 +181,27 @@ export default {
 	display: flex;
 	justify-content: center;
 }
-.shartitle {
-	width: 80%;
-	text-align: center;
-	margin-left: 10%;
-	border-bottom: 1px solid #dddddd;
-	position: relative;
-	height: 60upx;
+.perch {
+	width: 200px;
+	height: 200px;
 }
+.code_img {
+	width: 200px;
+	height: 200px;
+}
+.right_text {
+	font-size: 16px;
+}
+.left_text {
+	font-size: 16px;
+	margin-right: 10upx;
+}
+
 .tgtit {
 	text-align: center;
+	line-height: 50rpx;
 }
-.shartitle view {
-	height: 50upx;
-	line-height: 50upx;
-	font-size: 28upx;
-	color: #999;
-	width: 120upx;
-	margin: 32upx auto;
-	position: absolute;
-	background: #fff;
-	left: 50%;
-	margin-left: -60upx;
-}
-.sharapk {
-	display: flex;
-	justify-content: center;
-	margin: 20upx auto;
-}
-.sharapk view {
-	margin: 40upx;
-}
-.sharapk view image {
-	height: 80upx;
-	width: 80upx;
-}
-.content {
-	width: 100%;
-	background-color: #ffffff;
-}
-.top {
-	width: 100%;
-	height: 400upx;
-	background: url(../../../static/img/banner.png) no-repeat;
-	background-size: 100%;
-	background-position: center center;
-}
-.banner {
-	width: 100%;
-	background-color: #ffffff;
-	border-radius: 60upx 60upx 0 0;
-	margin-top: -60upx;
-}
-.banner dl {
-	margin-top: -80upx;
-}
+
 .banner dl dt {
 	text-align: center;
 }
@@ -250,17 +213,7 @@ export default {
 .banner dl dd {
 	text-align: center;
 }
-.img {
-	width: 300upx;
-	height: 300upx;
-	background-color: red;
-	margin: 0 auto;
-	margin-top: 60upx;
-}
-.img image {
-	width: 100%;
-	height: 100%;
-}
+
 .btn {
 	width: 260upx;
 	height: 60upx;
@@ -274,20 +227,5 @@ export default {
 	background: #33b17b;
 	color: #ffffff;
 	text-align: center;
-}
-.bottom {
-	width: 100%;
-	height: 400upx;
-	/* 	background: url(../../static/img/beij.png) no-repeat; */
-	background-position: left bottom; /* 设置背景图片位置 */
-	background-size: 20%;
-}
-.bottom ul {
-	padding-left: 40upx;
-	box-sizing: border-box;
-}
-.bottom ul li {
-	width: 100%;
-	height: 60upx;
 }
 </style>

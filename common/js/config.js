@@ -16,7 +16,7 @@ const config = {
 	appName: "spocp", //默认服务app
 	activeApp: "spocp", //当前服务app
 	singleApp: true, //是否单app项目
-	homePath: "/pages/specific/index/index", //登录后默认要跳转到的页面
+	homePath: "https://wx2.100xsys.cn/pages/public/index/index?website_no=WS2020041814270003&page_no=BX202004181428000003", //登录后默认要跳转到的页面
 	appID: {
 		// wxmp: 'wx8e6f993081f6e979',// 百想助理
 		wxmp: 'wx08876efb5760ca75', //生活能力评估
