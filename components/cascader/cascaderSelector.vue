@@ -73,9 +73,6 @@ export default {
 			const serviceName = srvInfo.serviceName;
 			const appName = srvInfo.appNo ? srvInfo.appNo : srvInfo.srv_app;
 			const that = this;
-			uni.showLoading({
-				mask: true
-			});
 			let url = this.getServiceUrl(appName, serviceName, 'select');
 			let condition = [];
 			if (cond && !ismore) {
@@ -103,7 +100,6 @@ export default {
 				}
 			};
 			const res = await this.$http.post(url, req);
-			uni.hideLoading();
 			if (res && res.data && res.data.state === 'SUCCESS') {
 				if (res.data.data.length === 0) {
 					this.showSelect = false;

@@ -1,12 +1,12 @@
 <template>
-	<view class="content" v-if="qrCodeData">
+	<view class="content">
 		<!-- <view class="top"></view> -->
 		<view class="title">智慧宝塔一码通</view>
 		<view class="banner">
-			<dl>
+	<!-- 		<dl>
 				<dt><image style="margin-top: -80upx;" :src="wxUserInfo.headimgurl" mode=""></image></dt>
 				<dd>{{ wxUserInfo.nickname }}</dd>
-			</dl>
+			</dl> -->
 			<view class="img">
 				<!-- <image src="/static/img/ewm.jpg" mode=""> -->
 				<uni-qrcode
@@ -23,11 +23,13 @@
 				<view v-else class="perch"></view>
 				<image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image>
 			</view>
-			<view class="tgtit">
-				<text class="left_text">更新于 {{ qrCodeData.nowTime ? qrCodeData.nowTime : qrCodeData.expired_date }}</text>
+			<view v-show="!iconIsShow" class="tgtit">
+				<text class="left_text">个人信息自动刷新</text>
 				<text @click="refreshCode" class="lg text-blue cuIcon-refresh right_text" :class="isRefresh ? 'refresh' : ''"></text>
-				<!-- 推广链接：
-				<text class="tugurl">http://sishuquan.com?id=3228969</text> -->
+			</view>
+			<view v-show="iconIsShow" class="tgtit">
+				<text class="lg text-blue cuIcon-roundcheckfill right_text"></text>
+				<text>已刷新</text>
 			</view>
 			<view class="sharbuttn">
 				<!-- <view class="btn" @click="toDetail('person')">个人信息</view> -->
@@ -58,7 +60,8 @@ export default {
 			a: '151',
 			textIsShow: false,
 			qrtimer: '',
-			wxUserInfo: uni.getStorageSync('backWxUserInfo')
+			wxUserInfo: uni.getStorageSync('backWxUserInfo'),
+			iconIsShow:false
 		};
 	},
 	onLoad() {
@@ -109,15 +112,17 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS' && res.data.resultCode === 'SUCCESS') {
 				this.qrCodeData = res.data.response[0].response;
-				let nowTime = new Date();
-				nowTime = formatDate(nowTime, 'YYYY-MM-DD HH:mm:ss');
-				this.qrCodeData.refreshTime = nowTime;
+				// let nowTime = new Date();
+				// nowTime = formatDate(nowTime, 'YYYY-MM-DD HH:mm:ss');
+				// this.qrCodeData.refreshTime = nowTime;
 				this.textIsShow = true;
 				this.isRefresh = false;
-				uni.showLoading({
-					title: '二维码生成中',
-					mask: true
-				});
+				setTimeout(()=>{
+					this.iconIsShow = true
+				},500)
+				setTimeout(()=>{
+					this.iconIsShow = false
+				},2000)
 				this.qrtimer = setInterval(() => {
 					this.automaticRefreshCode(this.qrCodeData.expired_date);
 				}, 1000);
@@ -125,7 +130,6 @@ export default {
 		},
 		/* 二维码生成之后得回调**/
 		makeComplete(e) {
-			uni.hideLoading();
 			this.qrcodeSrc = e;
 			this.isShow = false;
 			console.log('e-------', e);
@@ -145,28 +149,26 @@ export default {
 
 <style scoped lang="scss">
 .content {
-	width: 100vw;
 	height: 100vh;
-	background-color: #007aff;
-	padding: 20rpx 40rpx;
+	width: 100vw;
+	background-color: #DA3D3E;
+	// background-color: #007994;
 	.title {
 		color: #fff;
 		font-size: 40rpx;
 		text-align: center;
 		letter-spacing: 2px;
-		padding: 20rpx 0;
+		padding: 100rpx 0 50rpx;
 	}
 	.banner {
-		width: 100%;
 		background-color: #ffffff;
 		border-radius: 10rpx;
-		margin-top: 100rpx;
-		padding: 20rpx;
+		margin: 50rpx;
+		padding:75rpx 50rpx 50rpx;
 		.img {
 			width: 500upx;
 			height: 500upx;
-			/* background-color: red; */
-			margin: 50rpx auto;
+			margin: 0 auto;
 		}
 		.img image {
 			width: 100%;
@@ -188,6 +190,8 @@ export default {
 .code_img {
 	width: 200px;
 	height: 200px;
+	border:1px solid #CCCCCC;
+	padding: 20rpx;
 }
 .right_text {
 	font-size: 16px;
@@ -199,7 +203,10 @@ export default {
 
 .tgtit {
 	text-align: center;
-	line-height: 50rpx;
+	margin-top: 20rpx;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .banner dl dt {

@@ -37,11 +37,18 @@
 					<text class="text-grey">{{ couponInfo.used_end_time }}</text>
 				</view>
 			</view>
-			<view class="cu-item" :class="menuArrow ? 'arrow' : ''">
+			<view v-if="couponInfo.coupon_type === '代金券'" class="cu-item" :class="menuArrow ? 'arrow' : ''">
 				<view class="content">
 					<text class="cuIcon-circlefill text-grey"></text>
 					<text class="text-grey">优惠券使用条件：</text>
 					<text class="text-grey">消费满足{{ couponInfo.used_amount }}元可使用</text>
+				</view>
+			</view>
+			<view v-if="couponInfo.explain" class="cu-item" :class="menuArrow ? 'arrow' : ''">
+				<view class="content">
+					<text class="cuIcon-circlefill text-grey"></text>
+					<text class="text-grey">使用说明：</text>
+					<text class="text-grey">{{ couponInfo.explain }}</text>
 				</view>
 			</view>
 		</view>
@@ -105,6 +112,11 @@ export default {
 							colName: 'id',
 							ruleType: 'eq',
 							value: this.couponInfo.id
+						},
+						{
+							colName: 'store_no',
+							ruleType: 'eq',
+							value: uni.getStorageSync('realNameInfo').merchant ? uni.getStorageSync('realNameInfo').merchant.store_no:uni.getStorageSync('realNameInfo').employeeInfo.store_no
 						}
 					]
 				}
@@ -113,16 +125,22 @@ export default {
 			if (res.data.state === 'SUCCESS') {
 				console.log('优惠券使用成功', res.data);
 				uni.showModal({
-					title: '操作成功,即将返回首页',
+					title: '操作成功,即将返回商户首页',
 					showCancel: false,
 					success(res) {
 						if (res.confirm) {
 							uni.reLaunch({
-								url: this.$api.homePath
+								url: '/pages/specific/merchant/merchant'
+								// url: this.$api.homePath
 							});
 						}
 					}
 				});
+			}else{				
+				uni.showToast({
+					title:res.data.resultMessage,
+					icon:'none'
+				})
 			}
 		}
 	},

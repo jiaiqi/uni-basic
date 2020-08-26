@@ -6,12 +6,34 @@ import formateDate from '@/common/js/function/formatDate.js'
 import flyio from '@/common/js/wx.js' // 引入flyio
 let fly = new flyio
 //添加请求拦截器
+var loading = null
 fly.interceptors.request.use((request) => {
 	//给所有请求添加自定义header
 	// 如果是浏览器运行的记录 请求的页面path和参数
-	uni.showLoading({
-		mask: true
-	});
+	if (request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1) {
+		// uni.showLoading({
+		// 	mask: true,
+		// 	title:'正在识别'
+		// });
+	} else if (request.url.indexOf('srvfile_attachment_select') !== -1) {
+		// 获取文件路径
+		// uni.showLoading({
+		// 	mask: true
+		// });
+	} else {
+		loading ? loading.close() : '';
+		loading = Vue.prototype.$loading({
+			lock: true,
+			text: '加载中', //提示文字
+			fullscreen: false, // 是否全屏背景
+			loadingMode: "flower", //加载样式 circle-圆环 flower-...
+			size: "90", //加载的图标的大小 fontsize
+			textColor: "#fff", //提示文字的color
+			// color:"#009688" // mode为circle时 可以设置圆环颜色
+			// background: 'rgba(0, 0, 0, 0.7)' //遮罩的背景颜色
+		});
+	}
+
 	if (uni.getStorageSync('client_env') === 'wxh5' || uni.getStorageSync('client_env') === 'web') {
 		request.headers["requrl"] = window.location.pathname + window.location.search
 		console.log("requrl", window.location.pathname + window.location.search, window.location)
@@ -21,10 +43,6 @@ fly.interceptors.request.use((request) => {
 		console.log("bxAuthTicket", bxAuthTicket)
 		request.headers["bx_auth_ticket"] = bxAuthTicket
 	} else {
-		// uni.showToast({
-		// 	title: '没有bx_auth_ticket' + config.ticket,
-		// 	icon: "none"
-		// })
 		uni.setStorageSync('isLogin', false)
 	}
 	const outTime = uni.getStorageSync("expire_timestamp") //过期时间
@@ -49,8 +67,13 @@ fly.interceptors.request.use((request) => {
 fly.interceptors.response.use(
 	(res) => {
 		//只将请求结果的data字段返回
-		uni.hideLoading()
-		console.log("请求结果：", res)
+		if (res.request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1) {} else if (res.request.url.indexOf(
+				'srvfile_attachment_select') !== -1) {
+			// 获取文件路径
+		} else {
+			loading ? loading.close() : ''
+		}
+
 		if (res.data.resultCode === "0011" || (res.request.headers.USERlOGIN && res.request.headers.USERlOGIN ===
 				"noneLogin")) { //未登录或登录过期
 			uni.setStorageSync('isLogin', false)
@@ -66,10 +89,11 @@ fly.interceptors.response.use(
 					let index = path.lastIndexOf('/pages/')
 					if (index !== -1) {
 						let backUrl = path.substring(index)
-						uni.setStorageSync('backUrl', backUrl)
+						if (backUrl.indexOf("/login/login") === -1) {
+							uni.setStorageSync('backUrl', backUrl)
+						}
 					} else {
 						console.log('没有backurl4' + path);
-						// alert('没有backurl4' + path);
 					}
 				}
 				try {
@@ -93,28 +117,22 @@ fly.interceptors.response.use(
 			uni.showToast({
 				title: data.resultMessage
 			})
-			// let path = window.location.pathname
-			// // ?及?之后的字符
-			// let query = window.location.search
-			// let index = path.lastIndexOf('/pages/')
-			// if (index !== -1) {
-			// 	let backUrl = path.substring(index) + query
-			// 	uni.setStorageSync('backUrl', backUrl)
-			// 	uni.redirectTo({
-			// 		url: '/pages/login/login'
-			// 	})
-			// } else {
-			// 	// alert('没有backurl6' + path);
-			// 	console.log('没有backurl6' + path);
-			// }
 		} else {
 			uni.setStorageSync('stophttp', false)
 			let backUrl = uni.getStorageSync('backUrl')
 		}
+		loading ? loading.close() : '';
 	},
 	(err) => {
 		//发生网络错误后会走到这里
-		//return Promise.resolve("ssss")
+		loading ? loading.close() : '';
+		// loading = Vue.prototype.$loading({
+		// 	lock: true,
+		// 	text: '网络错误! 请检查网络或刷新重试',
+		// 	loading: false,
+		// 	customClass:"test",
+		// 	test:'123123'
+		// });
 	}
 )
 export default fly

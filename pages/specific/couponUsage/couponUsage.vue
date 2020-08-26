@@ -1,19 +1,20 @@
 <template>
 	<view class="coupon_useage_wrap">
 		<view class="coupon_top">
-			<!-- <view class="coupon_title">智慧宝塔</view> -->
+			<view class="coupon_title">宝塔惠民券</view>
 			<view class="coupon_main_codewrap">
 				<view class="coupon_top_title">{{ couponData.coupon_name }}</view>
 				<view class="coupon_main_qrcode"><canvas canvas-id="qrcode" style="width: 200px;height: 200px;border: 1px solid #ccc;" /></view>
 			</view>
 			<view class="coupon_main">
 				<view class="coupon_main_info">
-					<view class="title">
-						使用须知
-					</view>
-					<view class="coupon_main_info_useTime">可用时间：{{ couponData.used_start_time }}后</view>
-					<view class="coupon_main_info_endTime">过期时间：{{ couponData.used_end_time }}</view>
-					<view class="coupon_main_info_endTime">使用条件：景区消费满{{ couponData.consume_amount }}元可用</view>
+					<!-- <view class="title">
+						详细信息
+					</view> -->
+					<!-- <view class="coupon_main_info_useTime">可用时间：{{ couponData.used_start_time }}后</view> -->
+					<view class="coupon_main_info_endTime">有效期至：{{ couponData.used_end_time }}</view>
+					<!-- <view class="coupon_main_info_endTime">使用条件：景区消费满{{ couponData.consume_amount }}元可用</view> -->
+					<view class="coupon_main_info_endTime">使用说明：{{couponData.coupon_explain}}</view>
 				</view>
 			</view>
 		</view>
@@ -113,11 +114,12 @@ export default {
 		padding-top: 50rpx;
 		.coupon_title {
 			color: #fff;
-			font-size: 40rpx;
+			font-size: 54rpx;
 			line-height:100rpx;
 			display: flex;
-			// justify-content: center;
+			justify-content: center;
 			width: 90%;
+			margin-bottom: 30rpx;
 		}
 		.coupon_main_codewrap {
 			width: 90%;
@@ -129,7 +131,7 @@ export default {
 				justify-content: center;
 				font-weight: 600;
 				width: 100%;
-				padding:20rpx 0 0;
+				padding:50rpx 0 0;
 				color: #333;
 				// color: #DD524D;
 				font-size:35rpx;
@@ -151,6 +153,8 @@ export default {
 			// border-bottom-left-radius: 10rpx;
 			padding-top: 20rpx;
 			.coupon_main_info {
+				border-top: 1px dashed #ccc;
+				padding: 20rpx 0;
 				.title{
 					padding-top: 20rpx;
 					border-top: 1px dashed #cccccc;

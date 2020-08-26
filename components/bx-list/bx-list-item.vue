@@ -63,7 +63,6 @@
 						<view v-for="(item, index) in rowButtons" :key="index">
 							<button
 								class="cu-btn round sm text-blue line-blue"
-								:class="'cuIcon-' + item.button_type"
 								v-if="deRowButDisplay(itemData, item) && !detailList && item.button_type !== 'applyProc' && item.button_type !== 'customize' && item.disp_show !== false"
 								@click="footBtnClick(item)"
 								:key="item.id"
@@ -83,7 +82,6 @@
 								:data-procNo="itemData.proc_instance_no"
 								@click="footBtnClick(item)"
 								class="cu-btn round sm text-blue line-blue"
-								:class="'cuIcon-' + item.button_type"
 								v-if="item.more_config && JSON.parse(item.more_config).type == 'qrcode' && itemData.proc_status == '完成'"
 							>
 								{{ item.button_name }}
@@ -116,7 +114,6 @@
 						<button
 							v-if="deRowButDisplay(itemData, item) && !detailList && item.disp_show !== false"
 							class="cu-btn sm bg-blue "
-							:class="'cuIcon-' + item.button_type"
 							v-for="item in rowButtons"
 							:key="item.id"
 							@click="footBtnClick(item)"
@@ -443,6 +440,7 @@ export default {
 					}
 					// }
 				});
+				rowButton = rowButton.filter(item=>item.disp_show!==false)
 				this.rowButtons = rowButton;
 			}
 		},
@@ -538,9 +536,7 @@ export default {
 <style lang="scss" scoped>
 .list-item-wrap {
 	box-sizing: border-box;
-	// border-bottom: dashed 1px #efefef;
 	background-color: #fff;
-	// margin: 10rpx auto 0;
 	margin: 0 auto 10rpx;
 	position: relative;
 	// &::before {

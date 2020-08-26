@@ -31,7 +31,7 @@
 				@ocrInfo="getOcrInfo"
 			></formItem>
 		</view>
-		<uni-popup type="bottom" ref="ocrPopup">
+		<uni-popup type="bottom" ref="ocrPopup" :maskClick="false">
 			<view class="ocr-info">
 				<view class="title">识别到您的身份证信息如下:</view>
 				<u-form :model="ocrInfo" ref="uForm" label-width="200">
@@ -47,7 +47,7 @@
 					<u-form-item label="身份证号"><u-input v-model="ocrInfo.idNo" /></u-form-item>
 					<u-form-item label="住址"><u-input v-model="ocrInfo.address" /></u-form-item>
 				</u-form>
-				<view class="warn-text">点击确定使用以上信息覆盖已填写内容？</view>
+				<view class="warn-text">请检查信息是否正确，点击确定按钮将使用以上信息覆盖已填写内容</view>
 				<view class="button-box">
 					<button class="button cu-btn bg-blue" type="primary" @click="coverageInfo(true)">确定</button>
 					<!-- <button class="button cu-btn" type="default" @click="hideOcrPopup">算了</button> -->
@@ -191,6 +191,10 @@ export default {
 					address: e.address,
 					birth: date
 				};
+				uni.hideLoading();
+				uni.showToast({
+					title: '识别成功'
+				});
 				this.ocrInfo = ocrInfo;
 				this.$refs.ocrPopup.open();
 			}
@@ -201,35 +205,37 @@ export default {
 		},
 		coverageInfo(dontHide) {
 			// 使用ocr识别出的信息覆盖已填写信息
-			this.allField.forEach(item => {
-				if (item.column === 'name' && this.ocrInfo.name) {
-					item.value = this.ocrInfo.name;
-					this.fieldModel.name = this.ocrInfo.name;
-					item.disabled = true;
+			this.allField.forEach((item, index) => {
+				switch (item.column) {
+					case 'name':
+						item.value = this.ocrInfo.name;
+						this.fieldModel.name = this.ocrInfo.name;
+						item.disabled = true;
+						break;
+					case 'date_of_birth':
+						item.value = this.ocrInfo.birth;
+						this.fieldModel.date_of_birth = this.ocrInfo.birth;
+						item.disabled = true;
+						break;
+					case 'sex':
+						item.value = this.ocrInfo.sex;
+						this.fieldModel.sex = this.ocrInfo.sex;
+						item.disabled = true;
+						break;
+					case 'id_card':
+						item.value = this.ocrInfo.idNo;
+						this.fieldModel.id_card = this.ocrInfo.idNo;
+						this.ocrInfo.birth;
+						item.disabled = true;
+						break;
+					case 'address':
+						item.value = this.ocrInfo.address;
+						this.fieldModel.address = this.ocrInfo.address;
+						this.ocrInfo.birth;
+						item.disabled = true;
+						break;
 				}
-				if (item.column === 'date_of_birth' && this.ocrInfo.birth) {
-					item.value = this.ocrInfo.birth;
-					this.fieldModel.date_of_birth = this.ocrInfo.birth;
-					item.disabled = true;
-				}
-				if (item.column === 'sex' && this.ocrInfo.sex) {
-					item.value = this.ocrInfo.sex;
-					this.fieldModel.sex = this.ocrInfo.sex;
-					this.ocrInfo.birth;
-					item.disabled = true;
-				}
-				if (item.column === 'id_card' && this.ocrInfo.idNo) {
-					item.value = this.ocrInfo.idNo;
-					this.fieldModel.id_card = this.ocrInfo.idNo;
-					this.ocrInfo.birth;
-					item.disabled = true;
-				}
-				if (item.column === 'address' && this.ocrInfo.address) {
-					item.value = this.ocrInfo.address;
-					this.fieldModel.address = this.ocrInfo.address;
-					this.ocrInfo.birth;
-					item.disabled = true;
-				}
+				this.$refs.fitem[index].getValid();
 			});
 			if (dontHide === true) {
 				this.hideOcrPopup();

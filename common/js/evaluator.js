@@ -50,6 +50,7 @@ function evaluatorTo(rowData, formula) {
 										result = rowData[evaluator(formula[operator]['col'], result)] == rowData[valueObj.value_key]
 										break;
 									case 'login_user_info':
+									case 'top.user':
 										let login_user_info = uni.getStorageSync('login_user_info')
 										if(login_user_info&&typeof login_user_info==='object'){
 											result = rowData[evaluator(formula[operator]['col'], result)] == login_user_info[valueObj.value_key]

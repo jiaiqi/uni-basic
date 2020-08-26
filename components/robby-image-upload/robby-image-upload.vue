@@ -15,7 +15,7 @@
 <script>
 	export default {
 		name:'robby-image-upload',
-		props: ['value','enableDel','enableAdd','enableDrag','serverUrl','formData','header', 'limit','fileKeyName','showUploadProgress','serverUrlDeleteImage',"settings"],
+		props: ['value','enableDel','enableAdd','enableDrag','serverUrl','formData','header', 'limit','fileKeyName','showUploadProgress','serverUrlDeleteImage',"settings","isThumbnail"],
 		data() {
 			return {
 				imageBasePos:{
@@ -38,7 +38,7 @@
 		}, 
 		mounted: function(){
 			this.imageList = this.value
-			console.log('this.imageList',this.imageList,this.value)
+			// console.log('this.imageList',this.imageList,this.value)
 			if(this.showUploadProgress === false){
 				this.showUploadProgress = false
 			}else{
@@ -68,12 +68,15 @@
 				}
 			},
 			isShowAdd: function(){
+				// console.log('ishowAdd’,',this.imageList,this.limit)
 				if(this.enableAdd === false){
 					return false
 				}
+				
 				if(this.limit && this.imageList.length >= this.limit){
 					return false
 				}
+				
 				return true
 			},
 			isDragable: function(){
@@ -82,14 +85,14 @@
 				}else{
 					return true
 				}
+			},
+			uploadHeader:function(){
+				let header = this.deepClone(this.header) 
+				// header["Content-Type"] = "multipart/form-data"
+				return header
 			}
 		},
 		methods:{
-			toPage(){
-				if(this.settings.eventTarget){
-					this.$emit("navTo",this.settings.eventTarget)
-				}
-			},
 			selectImage: function(){
 				var _self = this
 				if(!_self.imageList){
@@ -97,11 +100,13 @@
 				} 
 				
 				uni.chooseImage({
-					sourceType: ['camera',"album"],
+					// sourceType: ['album'],
+					sizeType:['compressed'],
 					count: _self.limit ? (_self.limit - _self.imageList.length) : 999,
 					success: function(e){
-						console.log('选择完成',e)
-						var imagePathArr = e.tempFilePaths
+						// console.log('选择完成',e)
+						var imagePathArr = e.tempFiles
+						
 						//如果设置了limit限制，在web上count参数无效，这里做判断控制选择的数量是否合要求
 						//在非微信小程序里，虽然可以选多张，但选择的结果会被截掉
 						//在app里，会自动做选择数量的限制
@@ -117,56 +122,66 @@
 								return
 							}
 						}
+						
 						//检查服务器地址是否设置，设置即表示图片要上传到服务器
 						if(_self.serverUrl){
-							uni.showToast({
-								title: '上传进度：0/' + imagePathArr.length,
-								icon: 'none',
-								mask: false
-							});
+							// uni.showToast({
+							// 	title: '上传进度：0/' + imagePathArr.length,
+							// 	icon: 'none',
+							// 	mask: false
+							// });
+							
 							var remoteIndexStart = _self.imageList.length - imagePathArr.length
 							var promiseWorkList = []
 							var keyname = (_self.fileKeyName ? _self.fileKeyName : 'upload-images')
 							var completeImages = 0
 							for(let i=0; i<imagePathArr.length;i++){
-								console.log('--->',imagePathArr[i],_self.serverUrl,_self.header,_self.formData)
+								if(_self.isThumbnail){
+									_self.$set(_self.formData,'thumbnailType','fwsu_100')
+								}
 								promiseWorkList.push(new Promise((resolve, reject)=>{
-									let remoteUrlIndex = remoteIndexStart + i
 									uni.showLoading({
 										title:'上传中',
 										mask:true
 									})
+									let remoteUrlIndex = remoteIndexStart + i
 									uni.uploadFile({
 										url:_self.serverUrl,
-										header: _self.header,
+										header: {bx_auth_ticket:uni.getStorageSync('bx_auth_ticket')},
 										formData:_self.formData,
-										filePath: imagePathArr[i], 
+										filePath: imagePathArr[i].path, 
 										name: 'file',
+										
 										success: function(res){
-											console.log(res)
+											// console.log(res)
+											uni.hideLoading()
 											if(res.statusCode === 200){
 												if(_self.isDestroyed){
 													return
 												}
-												uni.hideLoading()
+												
 												completeImages ++
+												
 												if(_self.showUploadProgress){
-													
-													// uni.showToast({
-													// 	title: '上传进度：' + completeImages + '/' + imagePathArr.length,
-													// 	icon: 'none',
-													// 	mask: false,
-													// 	duration: 500
-													// });
+													uni.showToast({
+														title: '上传进度：' + completeImages + '/' + imagePathArr.length,
+														icon: 'none',
+														mask: false,
+														duration: 500
+													});
 												}
-												console.log('success to upload image: ' + res.data)
+												// console.log('是否显示ADD',_self.isShowAdd,(_self.limit && _self.imageList.length >= this.limit))
+												// console.log('success to upload image: ' + res.data)
+												// uni.hideLoading()
 												resolve(res.data)
 											}else{
 												console.log('fail to upload image:'+res.data)
 												reject('fail to upload image:' + remoteUrlIndex)
 											}
+											
 										},
 										fail: function(res){
+											uni.hideLoading()
 											console.log('fail to upload image:'+res)
 											reject('fail to upload image:' + remoteUrlIndex)
 										}
@@ -192,6 +207,7 @@
 							for(let i=0; i<imagePathArr.length;i++){
 								_self.imageList.push(imagePathArr[i])
 							}
+							
 							_self.$emit('add', {
 								currentImages: imagePathArr,
 								allImages: _self.imageList
@@ -206,11 +222,17 @@
 				var imageIndex = e.currentTarget.dataset.index
 				var deletedImagePath = _self.imageListData[imageIndex]
 				_self.imageListData.splice(imageIndex, 1) 
+				
 				//检查删除图片的服务器地址是否设置，如果设置则调用API，在服务器端删除该图片
-				console.log(imageIndex,_self.imageListData,deletedImagePath)
+				// console.log(imageIndex,_self.imageListData,deletedImagePath)
 				let fileUrl = deletedImagePath.substring(deletedImagePath.lastIndexOf('filePath=') + 9,deletedImagePath.length)
+				if(fileUrl.lastIndexOf('&thumbnailType=fwsu_100') !== -1){
+					fileUrl = fileUrl.substring(0,fileUrl.lastIndexOf('&thumbnailType=fwsu_100'))
+				}
 				if(_self.serverUrlDeleteImage){
 					uni.request({
+						// fileurl: "/20200215/20200212131045939100/20200215221516207100.jpg"
+						// http://srvms.100xsys.cn:80/file/download?filePath=/20200212/20200212131045939100/20200212131045939101.jpg
 						url: _self.serverUrlDeleteImage,
 						method: 'POST',
 						header:_self.header,
@@ -218,10 +240,11 @@
 							fileurl: fileUrl
 						},
 						success: res => {
-							console.log(res.data)
+							// console.log(res.data)
 						}
 					});
 				}
+				
 				this.$emit('delete',{
 					currentImage: deletedImagePath,
 					allImages: this.imageList
@@ -230,11 +253,19 @@
 			},
 			previewImage: function(e){
 				var imageIndex = e.currentTarget.dataset.index
+				let previewImage = this.deepClone(this.imageListData)
+				previewImage = previewImage.map((item,index)=>{
+					if(item.lastIndexOf("&thumbnailType=") !== -1){
+						item = item.slice(0, item.lastIndexOf("&thumbnailType="))
+					}
+					return item
+				})
+				// console.log(previewImage)
 				uni.previewImage({
-					current: this.imageList[imageIndex],
+					current: previewImage[imageIndex],
 					indicator: "number",
 					loop: "true",
-					urls:this.imageList
+					urls:previewImage
 				})
 			},
 			initImageBasePos: function(){
@@ -263,7 +294,7 @@
 				return this.dragIndex === indx
 			},
 			start: function(e){
-				console.log(this.isDragable)
+				// console.log("显示",this.isDragable)
 				if(!this.isDragable){
 					return
 				}
@@ -332,7 +363,7 @@
 	}
 </script>
 
-<style>
+<style lang="less" scoped>
 	.imageUploadContainer{
 		padding: 10upx 5upx;
 		margin: 10upx 5upx;
@@ -350,7 +381,7 @@
 	.imageItem, .imageUpload{
 		width: 160upx;
 		height: 160upx;
-		margin-right: 10upx;
+		margin: 10upx;
 	}
 	
 	.imageDel{
@@ -374,7 +405,7 @@
 	}
 	
 	.imageUpload{
-		line-height: 158upx;
+		line-height: 150upx;
 		text-align: center;
 		font-size: 150upx;
 		color: #D9D9D9;

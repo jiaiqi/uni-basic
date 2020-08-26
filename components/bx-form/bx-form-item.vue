@@ -14,29 +14,22 @@
 				{{ fieldData.label }}:
 				<text v-show="!valid.valid">({{ valid.msg }})</text>
 			</view>
-			<view v-if="pageFormType === 'detail'" class="detail-text">
+			<view v-if="pageFormType === 'detail'" class="detail-text" :class="{ 'detail-image': pageFormType === 'detail' && fieldData.type === 'images' }">
 				<view v-if="pageFormType === 'detail' && fieldData.type !== 'images' && fieldData.type !== 'snote' && fieldData.type !== 'Note'">
 					{{ fieldData.showText ? fieldData.showText : dictShowValue ? dictShowValue : treeSelectorShowValue ? treeSelectorShowValue : fieldData.value }}
 				</view>
 				<view class="" v-html="fieldData.value" v-if="pageFormType === 'detail' && (fieldData.type === 'snote' || fieldData.type === 'Note')"></view>
-				<!-- <view
-          v-html="JSON.parse(JSON.stringify(fieldData.value).replace(/\<img/gi, '<img width=100% height=auto '))"
-          v-if="pageFormType === 'detail' && (fieldData.type === 'snote' || fieldData.type === 'Note')"
-        ></view> -->
-				<view class="detail-image" v-else-if="pageFormType === 'detail' && fieldData.type === 'images'">
-					<image
-						v-if="fieldData.type === 'images'"
-						v-for="(item, index) in imagesUrl"
-						:key="index"
-						style="padding: 5upx;"
-						class="headimg radius lg"
-						@tap="showModal(index, 'Image')"
-						data-target="Image"
-						:src="item"
-					></image>
-				</view>
+				<image
+					v-if="fieldData.type === 'images'"
+					v-for="(item, index) in imagesUrl"
+					:key="index"
+					style="padding: 5upx;"
+					class="headimg radius lg"
+					@tap="showModal(index, 'Image')"
+					data-target="Image"
+					:src="item"
+				></image>
 			</view>
-
 			<view
 				class="form-content"
 				:class="{
@@ -113,6 +106,7 @@
 						@navTo="toPage"
 						:settings="fieldData.settings"
 						:form-data="formData"
+						:isThumbnail="true"
 						:header="reqHeader"
 						:showUploadProgress="true"
 						:server-url-delete-image="deleteFileUrl"
@@ -313,9 +307,9 @@
 		</view>
 		<view class="cu-modal" :class="modalName == 'Image' ? 'show' : ''" @tap="hideModal">
 			<view class="cu-dialog" style="height: 100vh;width:100vw;z-index: 999999;">
-				<view class="bg-img" :style="'background-image: url(' + imagesUrl[imageIndex] + ');height:100%;background-size:100%;'">
+				<view class="bg-img" :style="'background-image: url(' + imgurl + ');height:100%;background-size:100%;'">
 					<view class="cu-bar justify-end text-blue">
-						<view class="action" @tap="hideModal"><text class="cuIcon-close text-blue"></text></view>
+						<!-- <view class="action" @tap="hideModal"><text class="cuIcon-close text-blue"></text></view> -->
 					</view>
 				</view>
 				<!-- <view class="cu-bar bg-white">
@@ -436,7 +430,7 @@ export default {
 			}
 		}
 	},
-	name: 'formItem',
+	name: 'formItem',	
 	data() {
 		return {
 			defaultLineVal: '',
@@ -485,7 +479,6 @@ export default {
 			treeSelectorPage: { pageNo: 1, rownumber: 20, total: 0 }
 		};
 	},
-	updated() {},
 	computed: {
 		dictShowValue() {
 			let option_list_v2 = this.fieldData.option_list_v2;
@@ -497,6 +490,19 @@ export default {
 					}
 				});
 				return val;
+			}
+		},
+		imgurl(){
+			if(typeof this.imageIndex == 'number'){				
+				let currIndex = this.imageIndex
+				let imgArr = this.imagesUrl
+				let imgStr = null
+				if(imgArr[currIndex].indexOf('thumbnailType') != -1){
+					let endIndex = imgArr[currIndex].lastIndexOf('&')
+					imgStr = imgArr[currIndex].slice(0,endIndex)
+				}
+				// console.log('imgStr',imgStr)
+				return imgStr
 			}
 		},
 		showOptionsListRun: function() {
@@ -556,7 +562,8 @@ export default {
 				if (fieldData.type === 'treeSelector') {
 					if (fieldData.colData && fieldData.value) {
 						if (this.pageFormType === 'add') {
-							this.treeSelectorShowValue = fieldData.colData[fieldData.option_list_v2.refed_col];
+							// this.treeSelectorShowValue = fieldData.colData[fieldData.option_list_v2.refed_col];
+							this.treeSelectorShowValue = fieldData.colData[fieldData.option_list_v2.key_disp_col];
 						} else {
 							this.treeSelectorShowValue = fieldData.colData[fieldData.option_list_v2.key_disp_col];
 						}
@@ -567,9 +574,6 @@ export default {
 			});
 		}
 		console.log('this.fieldData', this.fieldData);
-	},
-	onShow() {
-		console.log('-------------onshow-------------');
 	},
 	created() {
 		console.log('-------------created-------------');
@@ -851,12 +855,11 @@ export default {
 				});
 				return;
 			}
-			let _this = this;
 			uni.showLoading({
-				title:'正在识别',
-				mask:true
-			})
-			// /daq/operate/srvdaq_orc_idcard_extraction
+				title: '正在识别',
+				mask: true
+			});
+			let _this = this;
 			const reqUrl = _this.getServiceUrl('daq', 'srvdaq_orc_idcard_extraction', 'operate');
 			const reqData = [
 				{
@@ -868,9 +871,8 @@ export default {
 					]
 				}
 			];
-			let response = await _this.$http.post(reqUrl, reqData);
+			let response = await _this.$http.post(reqUrl, reqData, 'test');
 			// 得到识别的文字
-			uni.hideLoading()
 			if (response.data.state === 'SUCCESS') {
 				const resp = response.data.response[0].response;
 				console.log(response.data.response);
@@ -878,6 +880,7 @@ export default {
 			} else {
 				console.log(response.data.resultMessage);
 			}
+			// uni.hideLoading()
 		},
 		onButtons(e, b) {
 			let item = e;
@@ -895,7 +898,7 @@ export default {
 				if (fileDatas) {
 					for (let i = 0; i < fileDatas.length; i++) {
 						console.log('file:2', self.$api.getFilePath + fileDatas[i].fileurl);
-						self.imagesUrl.push(self.$api.getFilePath + fileDatas[i].fileurl + '&bx_auth_ticket=' + uni.getStorageSync('bx_auth_ticket'));
+						self.imagesUrl.push(self.$api.getFilePath + fileDatas[i].fileurl + '&bx_auth_ticket=' + uni.getStorageSync('bx_auth_ticket') + '&thumbnailType=fwsu_100');
 					}
 				}
 				console.log('imagesUrl:===>', this.imagesUrl, fileDatas);
@@ -921,15 +924,14 @@ export default {
 		radioChange(e) {
 			if (this.fieldData.type === 'radioFk' || this.fieldData.type === 'checkboxFk') {
 				this.fieldData.value = e.target.value;
-				// this.fieldData.defaultValue = e.target.value;
 				this.$emit('on-value-change', this.fieldData);
 			} else {
 				this.fieldData.value = e.target.value;
 				this.onInputBlur();
 				this.$emit('on-value-change', this.fieldData);
 				console.log(e.target.value);
-				this.getValid();
 			}
+			this.getValid();
 			console.log('点击选项', this.fieldData.value, e);
 		},
 		onInputChange() {
@@ -992,9 +994,11 @@ export default {
 			this.fieldData.value = val.result;
 			this.onInputBlur();
 			this.$emit('on-form-item', this.fieldData);
+							this.getValid();
 		},
 		changePopup(e) {
 			this.$emit('on-form-item', this.fieldData);
+			this.getValid();
 		},
 		openCascader() {
 			this.defaultLineVal = this.fieldData.value;
@@ -1043,6 +1047,7 @@ export default {
 		getCascaderValue(val, btnType) {
 			if (btnType === 'sure') {
 				this.$refs.popup.close();
+				this.getValid();
 				if (val) {
 					val['column'] = this.fieldData.column;
 					this.$emit('get-cascader-val', val);
@@ -1424,6 +1429,8 @@ uni-text.input-icon {
 	min-height: 30px;
 	padding: 0rpx 20rpx;
 	align-items: flex-start;
+	flex-wrap: wrap;
+	width: calc(100% - 40rpx);
 	&.flexColumn {
 		flex-direction: column;
 		align-items: flex-start;
@@ -1444,16 +1451,18 @@ uni-text.input-icon {
 		// line-height: 30px;
 		padding: 10upx 0;
 		text-indent: 20rpx;
-		.detail-image {
+		width: 100%;
+		&.detail-image {
 			width: 100%;
 			display: flex;
-			justify-content: center;
+			// justify-content: flex-end;
+			min-width: 80vw;
 			.headimg {
-				width: auto;
-				height: auto;
-				width: 100px;
-				height: 100px;
-				overflow: hidden;
+				display: inline-block;
+				min-width: 300rpx;
+				min-height: 200rpx;
+				max-width: 50vw;
+				max-height: 50vw;
 				border-radius: 20rpx;
 				background-size: cover;
 			}

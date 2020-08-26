@@ -45,7 +45,13 @@
           <view class="s-pull-tip-wrap" v-if="upErrorText" @click="onUpErrorClick">{{upErrorText}}</view>
         </slot>
         <slot name="up-finish" v-else-if="isUpFinish && showUpFinish">
-          <view class="s-pull-tip-wrap" v-if="upFinishText">{{upFinishText}}</view>
+          <view 
+	style=" height: 100rpx;
+  	  display: flex;
+  	  justify-content: center;
+  	  align-items: center;
+  	  font-size: 28rpx;
+  	  color: #969799;" class="s-pull-tip-wrap-text" v-if="upFinishText">{{upFinishText}}</view>
         </slot>
       </view>
     </scroll-view>
@@ -775,6 +781,14 @@ export default {
   .s-pull-up-wrap,
   .s-pull-tip-wrap {
     height: 100rpx;
+  }
+  .s-pull-tip-wrap-text {
+  	  height: 100rpx;
+  	  display: flex;
+  	  justify-content: center;
+  	  align-items: center;
+  	  font-size: 28rpx;
+  	  color: #969799;
   }
   /* 旋转loading */
   .s-pull-loading-icon {

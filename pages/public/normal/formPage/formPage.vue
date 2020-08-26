@@ -144,18 +144,19 @@ export default {
 			return buttons;
 		}
 	},
-	created() {
-		// #ifdef H5
-		const destApp = this.$route.query.destApp;
-		if (destApp) {
-			uni.setStorageSync('activeApp', destApp);
-		}
-		// #endif
-	},
+
 	onShow() {
 		let self = this;
 		let condition = this.condition;
 		if (this.type === 'detail' || this.type === 'update') {
+			// #ifdef H5
+			if (this.$route) {
+				const destApp = this.$route.query.destApp;
+				if (destApp) {
+					uni.setStorageSync('activeApp', destApp);
+				}
+			}
+			// #endif
 			this.getDetailfieldModel().then(res => {
 				if (!this.photosData) {
 					this.defaultVal = res;
@@ -215,12 +216,12 @@ export default {
 				//TODO handle the exception
 			}
 		}
-		if(option.defaultVal){
-			try{
-				this.defaultVal = JSON.parse(option.defaultVal)
-			}catch(e){
+		if (option.defaultVal) {
+			try {
+				this.defaultVal = JSON.parse(option.defaultVal);
+			} catch (e) {
 				//TODO handle the exception
-				console.log(e)
+				console.log(e);
 			}
 		}
 		if (option.params) {
@@ -234,7 +235,7 @@ export default {
 			if (typeof query.condition === 'object') {
 				cond = query.condition;
 			}
-			this.defaultCondition = cond
+			this.defaultCondition = cond;
 		}
 		if (option.hasOwnProperty('loadedType')) {
 			this.loadedType = option.loadedType;
@@ -251,11 +252,11 @@ export default {
 				this.defaultVal = this.params.defaultVal;
 			}
 			if (this.params.condition && Array.isArray(this.params.condition)) {
-				this.params.condition.forEach(item=>{
+				this.params.condition.forEach(item => {
 					if (item.colName === 'openid' && item.value === 'user_no') {
 						item.value = uni.getStorageSync('login_user_info').user_no;
 					}
-				})
+				});
 				this.condition = this.params.condition;
 			}
 		} else if (query.serviceName && query.type) {
@@ -391,6 +392,10 @@ export default {
 				type = 'detail';
 			}
 			let colVs = await this.getServiceV2(this.serviceName, type ? type : this.type, type ? type : this.type, app);
+			if (!colVs) {
+				console.log('未查找到v2数据');
+				return;
+			}
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}
@@ -498,13 +503,20 @@ export default {
 		async getDetailfieldModel() {
 			let params = this.deepClone(this.params);
 			let app = uni.getStorageSync('activeApp');
-			params.serviceName = params.serviceName.replace('_update', '_select').replace('_add', '_select');
-			let url = this.getServiceUrl(app, params.serviceName, 'select');
+			// #ifdef H5
+			const destApp = this.$route.query.destApp;
+			if (destApp) {
+				app = destApp;
+			}
+			// #endif
+			let serviceName = params.serviceName.replace('_update', '_select').replace('_add', '_select');
+			app = serviceName.substring(3, serviceName.indexOf('_'));
+			let url = this.getServiceUrl(app, serviceName, 'select');
 			const req = {
 				colNames: ['*'],
 				condition: params.condition,
 				page: { pageNo: 1, rownumber: 5 },
-				serviceName: params.serviceName
+				serviceName: serviceName
 			};
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
@@ -516,9 +528,10 @@ export default {
 		},
 		async onButton(e) {
 			let data = this.$refs.bxForm.getFieldModel();
-			if (!data) {
+			if (data && data.valid === false) {
 				uni.showToast({
-					title: '未发现修改内容'
+					title: '请检查输入信息是否有误',
+					icon: 'none'
 				});
 				return;
 			}
@@ -530,6 +543,13 @@ export default {
 					if (e.page_type === '详情') {
 					} else {
 						if (req) {
+							if (!data) {
+								uni.showToast({
+									title: '未发现修改内容',
+									icon: 'none'
+								});
+								return;
+							}
 							req = [{ serviceName: e.service_name, data: [req], condition: this.condition }];
 							let app = uni.getStorageSync('activeApp');
 							let url = this.getServiceUrl(app, e.service_name, 'add');

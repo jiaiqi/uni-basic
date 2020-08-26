@@ -1,11 +1,12 @@
 <template>
-	<view class="coupon-list-wrap" v-if="req.serviceName">
-		<u-navbar title="优惠券列表" :back-icon-color="backIcon" :is-back="false" :back-text-style="backText" :title-color="color" :background="background"></u-navbar>
+	<view class="coupon-list-wrap">
+		<!-- <u-navbar title="优惠券列表" :back-icon-color="backIcon" :is-back="false" :back-text-style="backText" :title-color="color" :background="background"></u-navbar> -->
 		<view class="coupon-list-tab">
 			<scroll-view scroll-x class="bg-white nav" scroll-with-animation :scroll-left="scrollLeft">
 				<view class="flex text-center">
 					<view class="cu-item flex-sub" :class="index == TabCur ? 'text-orange cur' : ''" v-for="(item, index) in tabData" :key="index" @tap="tabSelect" :data-id="index">
-						{{ item.label }}
+						<text>{{ item.label }}</text>
+						<text class="right_num">({{item.num?item.num:0}})</text>
 					</view>
 				</view>
 			</scroll-view>
@@ -17,7 +18,7 @@
 			:pullUp="loadData"
 			:enablePullDown="true"
 			:enablePullUp="true"
-			:top="185"
+			:top="90"
 			:fixed="true"
 			:bottom="0"
 			finishText="我是有底线的..."
@@ -44,7 +45,7 @@
 								<view class="num">{{ item.used_amount }}</view>
 								<view class="unit">元</view>
 							</view>
-							<view class="criteria">满{{ item.consume_amount }}使用</view>
+							<view v-if="item.coupon_type === '代金券'" class="criteria">满{{ item.consume_amount }}使用</view>
 							<view @click="toUse(item)" v-if="TabCur == 1" class="use">去使用</view>
 							<view v-if="TabCur == 2" class="use">已使用</view>
 							<view @click="drawCoupon(item)" v-if="TabCur == 0" class="use">领取</view>
@@ -65,7 +66,7 @@ export default {
 	data() {
 		return {
 			background: {
-				backgroundColor: '#ec625c'
+				backgroundColor: '#DA3D3E'
 
 				// 导航栏背景图
 				// background: 'url(https://cdn.uviewui.com/uview/swiper/1.jpg) no-repeat',
@@ -103,7 +104,7 @@ export default {
 					value: 2
 				},
 				{
-					label: '已失效',
+					label: '已过期',
 					value: 3
 				}
 			],
@@ -159,8 +160,12 @@ export default {
 				this.req.cond = cond;
 				this.getShopUserInfo();
 				this.onRefresh();
+				this.getCouponListNum()
 			}
 		})
+	},
+	onShow() {
+		this.getCouponListNum()
 	},
 	methods: {
 		handleClick(item){
@@ -211,6 +216,39 @@ export default {
 				url: '/pages/specific/couponUsage/couponUsage?couponItem=' + encodeURIComponent(JSON.stringify(couponItem))
 			});
 		},
+		/* 获取优惠券列表数量**/
+		async getCouponListNum(){
+			const url = this.getServiceUrl('spocp','srvspocp_coupon_receive_record_select','select')
+			let req = {
+				serviceName: 'srvspocp_coupon_receive_record_select',
+				colNames: ['*'],
+				condition:[{
+						colName: 'user_no',
+						ruleType: 'eq',
+						value: uni.getStorageSync('login_user_info').user_no
+				}],
+				group:[{
+					colName:"id",
+					type:"count"
+				},{
+					colName:"view_used_status",
+					type:"by"
+				}]
+			}
+			let res = await this.$http.post(url, req);
+			let data = res.data.data
+			
+			let tabDatas = this.tabData
+			tabDatas.forEach(item=>{
+				data.forEach(tan=>{
+					if(item.label == tan.view_used_status){
+						this.$set(item,'num',tan.id)
+					}
+				})
+				
+			})
+			console.log("优惠券列表数据",res)
+		},
 		/* 获取可领取得优惠券**/
 		async getDrawCoupon(serviceName, cond) {
 			let self = this;
@@ -251,6 +289,13 @@ export default {
 			} else {
 				self.$refs.pullScroll.success();
 			}
+			let currIndex = this.TabCur
+			let tabDatas = this.tabData
+			tabDatas.forEach(item=>{
+				if(currIndex==0 && item.value == currIndex){
+					this.$set(item,'num',res.data.page.total)
+				}
+			})
 			this.couponValidList = this.couponValidList.concat(res.data.data);
 		},
 		/* 查询商户信息**/
@@ -276,9 +321,6 @@ export default {
 		},
 		/* 领取优惠券**/
 		async drawCoupon(couponItem) {
-			uni.showLoading({
-				title: '加载中'
-			});
 			const url = this.getServiceUrl('spocp', 'srvspocp_coupon_get', 'operate');
 			const req = [
 				{
@@ -295,12 +337,11 @@ export default {
 			];
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS') {
-				uni.hideLoading();
 				uni.showToast({
 					title: '领取成功',
 					duration: 2000
 				});
-				setTimeout(() => [this.onRefresh()], 500);
+				setTimeout(() => [this.onRefresh(),this.getCouponListNum()], 500);
 			} else {
 				uni.showToast({
 					title: res.data.resultMessage,
@@ -569,7 +610,7 @@ export default {
 					justify-content: space-around;
 					color: white;
 					align-items: center;
-					background: linear-gradient(to right, #ec625c, #ee827f);
+					background: linear-gradient(to right, #DA3D3E, #ee827f);
 					.ticket {
 						display: flex;
 						align-items: center;
@@ -608,6 +649,10 @@ export default {
 }
 .tab-item {
 	width: 33%;
+}
+.right_num{
+	color: #f37b1d;
+	margin-left: 5rpx;
 }
 .add-button {
 	position: fixed;

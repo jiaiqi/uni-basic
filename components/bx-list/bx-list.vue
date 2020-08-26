@@ -348,9 +348,6 @@ export default {
 			this.$emit('clickFootBtn', data);
 		},
 		async getListData(cond, proc_data_type, i) {
-			uni.showLoading({
-				mask: true
-			});
 			let self = this;
 			let serviceName = this.serviceName;
 			let app = uni.getStorageSync('activeApp');
@@ -381,8 +378,6 @@ export default {
 				req.condition = req.condition.concat([{ colName: this.searchCol, ruleType: 'like', value: keywords }]);
 			}
 			let res = await this.$http.post(url, req);
-			uni.hideLoading();
-
 			if (res.data.state === 'SUCCESS') {
 				if (this.pageInfo.pageNo === 1) {
 					self.listData = [];

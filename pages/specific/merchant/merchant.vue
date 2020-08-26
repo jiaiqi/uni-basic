@@ -1,11 +1,18 @@
 <template>
 	<view class="menu-wrap">
 		<view class="shop-info" v-if="merchantInfo">
-			<view class="shop-name">{{ merchantInfo.store_name }}</view>
-			<view class="info-item">
+			<view class="shop-name">
+				<text class="">
+					{{ merchantInfo.store_name }}
+				</text>
+				<view class="info-item">
 				<view class="label">联系电话：</view>
 				<view class="value">{{ merchantInfo.store_tel }}</view>
-			</view>
+			</view></view>
+	<!-- 		<view class="info-item">
+				<view class="label">联系电话：</view>
+				<view class="value">{{ merchantInfo.store_tel }}</view>
+			</view> -->
 		</view>
 		<view class="menu-box">
 			<view class="menu-item" v-if="isMerchant || isEmployee" @click="toPage('detail')">
@@ -20,7 +27,7 @@
 				<text class="icon cuIcon-people margin-right-xs"></text>
 				<view class="cont">
 					<text>员工管理</text>
-					<text class="tip">查看员工信息，添加、删除员工数据</text>
+					<text class="tip">对店铺参与核销的员工进行管理</text>
 				</view>
 				<text class="icon cuIcon-right right"></text>
 			</view>
@@ -52,7 +59,7 @@ export default {
 			isEmployee: false, //是否是员工
 			realNameInfo: '',
 			merchantInfo: '',
-			employeeInfo:''
+			employeeInfo: ''
 		};
 	},
 	methods: {
@@ -75,13 +82,21 @@ export default {
 						serviceName: 'srvspocp_store_select'
 					};
 					uni.navigateTo({
-						url: '/pages/public/normal/formPage/formPage?params=' + JSON.stringify(params)+'&destApp=spocp'
+						url: '/pages/public/normal/formPage/formPage?params=' + JSON.stringify(params) + '&destApp=spocp'
 					});
 					// url = '/pages/specific/merchantDetail/merchantDetail';
 					break;
 				case 'people':
 					// url = '/pages/specific/merchantList/merchantList';
-					url = '/pages/public/normal/list/list?serviceName=srvspocp_store_users_select&destApp=spocp';
+					// store_no
+					let cond = [
+						{
+							colName: 'store_no',
+							ruleType: 'eq',
+							value: this.merchantInfo.store_no
+						}
+					];
+					url = '/pages/public/normal/list/list?serviceName=srvspocp_store_users_select&destApp=spocp&cond=' + JSON.stringify(cond);
 					break;
 				case 'scan':
 					this.toScan();
@@ -92,6 +107,7 @@ export default {
 					break;
 			}
 			if (url) {
+				uni.setStorageSync('activeApp', 'spocp');
 				uni.navigateTo({
 					url: url
 				});
@@ -186,6 +202,7 @@ export default {
 		}
 	},
 	async onLoad() {
+		uni.setStorageSync('activeApp', 'spocp');
 		let res = await this.selectRealNameInfo();
 		if (res && res.status === 'success') {
 			// 已经实名认证 有实名认证信息
@@ -203,14 +220,14 @@ export default {
 				if (storUserInfo && storUserInfo.store_no) {
 					this.getSignature(); //获取微信扫一扫接口权限
 					this.isEmployee = true;
-					this.employeeInfo = storUserInfo
+					this.employeeInfo = storUserInfo;
 					if (res.employeeInfo) {
 						this.merchantInfo = res.employeeInfo;
 					}
 				} else {
 					uni.showModal({
 						title: '提示',
-						content: '您未注册商户，是否前往注册？',
+						content: '您未注册商户,是否前往商户注册?',
 						success(res) {
 							if (res.confirm) {
 								// 跳转到商家登记页面
@@ -252,26 +269,25 @@ export default {
 		// padding-bottom: 20rpx;
 		background-color: #fff;
 		margin-bottom: 10rpx;
+		display: flex;
+		background-color: #DA3D3E;
+		width: 100vw;
 		.shop-name {
 			font-size: 32rpx;
 			line-height: 50rpx;
 			padding: 20rpx;
-			background-color: orange;
+			background-color: #DA3D3E;
 			color: #fff;
 			margin-bottom: 10rpx;
-		}
-		.info-item {
+			width: 100%;
 			display: flex;
-			margin: 10rpx 20rpx;
-			align-items: center;
-			.label {
-				min-width: 150rpx;
-				text-align: justify;
-				text-align-last: justify;
-				color: #666;
-			}
-			.value {
-				color: #000;
+			flex-direction: column;
+			// justify-content: space-between;
+			justify-content: flex-start;
+			.info-item{
+				display: flex;
+				color: #fff;
+				line-height: 50rpx;
 			}
 		}
 	}
@@ -300,14 +316,15 @@ export default {
 			}
 			.right {
 				position: absolute;
-				right: 50rpx;
+				// right: 50rpx;
+				right: 0;
 				color: #666;
 			}
 			.cont {
 				display: flex;
 				flex-direction: column;
 				.tip {
-					font-size: 20rpx;
+					font-size: 24rpx;
 					color: rgba($color: #333, $alpha: 0.7);
 					// color: rgba($color: #fff, $alpha: 0.7);
 				}

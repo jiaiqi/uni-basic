@@ -1,6 +1,7 @@
 <template>
 	<view class="merchant-list">
-		<u-navbar title="优惠券核销记录"  :is-back="false" :title-color="'#fff'" :background="background"></u-navbar>
+		<!-- <u-navbar title="优惠券核销记录"  :is-back="false" :title-color="'#fff'" :background="background"></u-navbar> -->
+		
 		<bx-new-list class="bx-list" v-slot:listItem="{ data }" :srvInfo="srvInfo" @getRowButton="getRowButton" ref="bxList">
 			<view class="list-item">
 				<view class="carrier">
@@ -11,52 +12,16 @@
 							<view class="term_time">核销人：{{ data.confirmUserInfo.real_name }}</view>
 							<view style="margin-bottom: 2px;" class="term_time">核销时间：{{ data.confirm_time }}</view>
 						</view>
-						<view class="icon shixiao" :class="TabCur == 3 ? 'un-use' : ''">
-							<image class="lose" v-if="TabCur == 3" src="../../../static/img/lose.png" mode=""></image>
-							<image v-if="TabCur == 2" src="../../../static/img/use.png" mode=""></image>
-						</view>
 						<view class="gap-top"></view>
 						<view class="gap-bottom"></view>
 					</view>
-				
-					<view class="right" :class="isLose ? 'is-lose' : isUse ? 'is-use' : ''">
+					<view class="right">
 						<view class="ticket">
 							<view class="num">{{ data.used_amount }}</view>
 							<view class="unit">元</view>
 						</view>
-						<!-- <view class="criteria">满{{ data.consume_amount }}使用</view> -->
 					</view>
 				</view>
-			<!-- 	<view class="content-box">
-					<view class="title">
-						<text class="label">优惠券名称:</text>
-						<text class="value">{{ data.coupon_name }}</text>
-					</view>
-					<view class="content">
-						<view class="content-item">
-							<text class="label">使用者:</text>
-							<text class="value">{{ data.usedUserInfo.name }}</text>
-						</view>
-						<view class="content-item">
-							<text class="label">核销人：</text>
-							<text class="value">{{ data.confirmUserInfo.real_name }}</text>
-						</view>
-						<view class="content-item">
-							<text class="label">核销时间</text>
-							<text class="value">{{ data.confirm_time }}</text>
-						</view>
-					</view>
-				</view> -->
-				<!-- 	<view class="button-box">
-					<view class="content-item">
-						<text class="label">{{ data.status.label }}:</text>
-						<text class="value" :class="{'text-red':data.status&&data.status.value==='未确认','text-green':data.status&&data.status.value==='已确认'}">{{ data.status.value }}</text>
-					</view>
-					<view class="buttons">
-						<u-button type="primary" v-if="data.status.value != '已确认'" @click="changeStatus(data)">确认</u-button>
-						<u-button type="error" @click="deletePeople(data)">删除</u-button>
-					</view>
-				</view> -->
 			</view>
 		</bx-new-list>
 	</view>
@@ -85,92 +50,20 @@ export default {
 			rowButtons: []
 		};
 	},
-	created() {},
-	mounted() {},
+	onLoad() {
+		// this.getCouponUsedList()
+	},
 	methods: {
-		deletePeople(e) {
-			if (e.id && (e.id.value || e.id.value === 0)) {
-				let url = this.getServiceUrl(this.srvInfo.app, 'srvspocp_merchant_owner_delete', 'operate');
-				let req = [
-					{
-						serviceName: 'srvspocp_merchant_owner_delete',
-						condition: [
-							{
-								colName: 'id',
-								ruleType: 'eq',
-								value: e.id.value
-							}
-						]
-					}
-				];
-				this.$http.post(url, req).then(res => {
-					if (res.data.state === 'SUCCESS') {
-						this.$refs.bxList.refresh();
-					} else {
-						uni.showToast({
-							title: res.data.resultMessage
-						});
-					}
-				});
+		async getCouponUsedList(){
+			const url = this.getServiceUrl('spocp','srvspocp_coupon_audit_market','select')
+			const req = {
+				serviceName:'srvspocp_coupon_audit_market',
+				"colNames": ["*"],
+				condition:[]
 			}
-		},
-		changeStatus(e) {
-			// 改变商户状态 无效/已确认
-			if (e.id && (e.id.value || e.id.value === 0)) {
-				let url = '';
-				let req = [];
-				if (e.status.value === '无效' || e.status.value === '未确认') {
-					url = this.getServiceUrl(this.srvInfo.app, 'srvspocp_merchant_owner_confirm', 'operate');
-					req = [
-						{
-							serviceName: 'srvspocp_merchant_owner_confirm',
-							condition: [
-								{
-									colName: 'id',
-									ruleType: 'eq',
-									value: e.id.value
-								}
-							]
-						}
-					];
-				} else if (e.status.value === '已确认') {
-					url = this.getServiceUrl(this.srvInfo.app, 'srvspocp_merchant_status_invalid_update', 'operate');
-					// srvspocp_merchant_status_invalid_update
-					req = [
-						{
-							srvApp: 'spocp',
-							serviceName: 'srvspocp_merchant_status_invalid_update',
-							condition: [
-								{
-									colName: 'id',
-									ruleType: 'eq',
-									value: e.id.value
-								}
-							]
-						}
-					];
-				} else {
-					uni.showToast({
-						title: '无效操作',
-						icon: 'none'
-					});
-					return;
-				}
-				this.$http.post(url, req).then(res => {
-					if (res.data.state === 'SUCCESS') {
-						uni.showToast({
-							title: '操作成功',
-							icon: 'none'
-						});
-						this.$refs.bxList.refresh();
-					} else {
-						uni.showToast({
-							title: res.data.resultMessage,
-							icon: 'none'
-						});
-					}
-				});
-			}
+			let res = await this.$http.post(url.req).then(res=>{
+				console.log("优惠券核销列表",res)
+			})
 		},
 		getRowButton(e) {
 			this.rowButtons = e;
@@ -180,6 +73,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.no-data{
+	height: calc(100vh - 100rpx);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	image{
+		width: 100rpx;
+		height: 100rpx;
+	}
+	.none_text{
+		color: #CCCCCC;
+		margin-top: 10rpx;
+	}
+}
 .merchant-list {
 	display: flex;
 	flex-direction: column;

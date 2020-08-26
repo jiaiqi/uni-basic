@@ -119,13 +119,9 @@ export default {
      * @param {String} cate_no -分类编号
      */
     async getContList(cate_no) {
-      uni.showLoading({
-        mask: true
-      });
       const url = this.getServiceUrl(this.srvApp, this.contentService, 'select');
       const req = { serviceName: this.contentService, colNames: ['*'], condition: [{ colName: 'no', value: cate_no, ruleType: 'eq' }], page: { rownumber: 5 } };
       let res = await this.$http.post(url, req);
-      uni.hideLoading();
       if (res.data.state === 'SUCCESS' && res.data.data.length >= 0) {
         this.page = res.data.page;
         let data = res.data.data;

@@ -1,5 +1,5 @@
 <template>
-	<view class="index-wrap">
+	<view class="index-wrap" v-loading="loading">
 		<u-button type="primary" shape="circle" :ripple="true" @click="toPage('person')">我的二维码</u-button>
 		<!-- <u-button type="success" shape="circle" :ripple="true" @click="toPage('get')">优惠券</u-button> -->
 		<!-- <u-button type="warning" shape="circle" :ripple="true" v-if="showMerchantList" @click="toPage('list')">商户管理</u-button> -->
@@ -15,15 +15,26 @@ export default {
 	data() {
 		return {
 			showMerchantList: false,
-			isValid: false //是否有效商户
+			isValid: false, //是否有效商户
+			loading: false
 		};
 	},
 	onLoad() {
+		// const loading = this.$loading({
+		// 	lock: true,
+		// 	text: '加载中',
+		// 	background: 'rgba(0, 0, 0, 0.7)'
+		// });
+		// this.loading = true;
+		setTimeout(() => {
+			// loading.close();
+			// this.loading = false
+		}, 5000);
 		this.selectRealNameInfo().then(res => {
 			// 查询实名信息
 			if (res && res.data && res.status === 'success') {
 				// 有商户数据并且商户数据有值
-				if (res._merchant_user&&typeof res._merchant_user ==='object'&&Object.keys(res._merchant_user).length>0) {
+				if (res._merchant_user && typeof res._merchant_user === 'object' && Object.keys(res._merchant_user).length > 0) {
 					this.showMerchantList = true;
 					if (res._merchant_user.status === '已确认') {
 						this.isValid = true;
@@ -118,7 +129,7 @@ export default {
 					showCancel: false,
 					confirmText: '知道了'
 				});
-				return
+				return;
 			}
 			console.log('0000000');
 			jweixin.ready(function() {
@@ -159,6 +170,7 @@ export default {
 	padding-top: 30vh;
 	background-image: url(../../../static/img/bgs.jpeg);
 	background-size: cover;
+	z-index: 2000;
 	// justify-content: center;
 	.u-btn {
 		min-width: 60vw;

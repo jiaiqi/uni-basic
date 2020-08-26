@@ -66,7 +66,7 @@
 		{
 			"path": "pages/specific/couponList/couponList",
 			"style": {
-				"navigationBarTitleText": "优惠券使用"
+				"navigationBarTitleText": "优惠券列表"
 			}
 		},
 		{
@@ -110,7 +110,7 @@
 		"navigationStyle": "custom",
 		"navigationBarTextStyle": "white",
 		// "navigationBarTitleText": "uni-basic",
-		"navigationBarBackgroundColor": "#1abc9c",
+		"navigationBarBackgroundColor": "#DA3D3E",
 		"backgroundColor": "#F8F8F8"
 	},
 	"easycom": {

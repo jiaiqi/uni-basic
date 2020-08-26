@@ -178,9 +178,6 @@ export default {
 		},
 		async getPageItem(item = {}) {
 			// 获取页面项
-			uni.showLoading({
-				mask: true
-			});
 			let serviceName = '';
 			switch (item.div_type) {
 				case 'buttons':
@@ -221,7 +218,6 @@ export default {
 					condition: [{ colName: 'item_no', ruleType: 'in', value: item.item_no }]
 				};
 				let res = await this.$http.post(url, req);
-				uni.hideLoading();
 				if (res.data.state === 'SUCCESS') {
 					let itemList = res.data.data;
 					itemList.forEach((pageitem, index) => {

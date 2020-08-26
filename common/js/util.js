@@ -3,8 +3,10 @@ import {
 	api
 } from 'common/js/config.js'
 import fly from '@/common/js/http.js' // fly 请求拦截
-
+import Loading from '@/components/bx-loading/index.js'
 const install = (Vue, options) => {
+	Vue.use(Loading.directive)
+	Vue.prototype.$loading = Loading.service
 	Vue.prototype.$http = fly
 	Vue.prototype.$api = { ...config,
 		...api
@@ -271,7 +273,7 @@ const install = (Vue, options) => {
 						} catch (e) {
 							//TODO handle the exception
 						}
-					}else{
+					} else {
 						fieldInfo.fileNum = 1
 						fieldInfo.moreConfig = {
 							fieldType: "id_photo"
@@ -583,7 +585,6 @@ const install = (Vue, options) => {
 						}
 						return new Promise((resolve, reject) => {
 							resolve("跳转")
-
 						})
 						//代码块
 						break;
@@ -665,12 +666,27 @@ const install = (Vue, options) => {
 						break;
 					case "delete":
 						//代码块
+						return new Promise((resolve, reject) => {
+							Vue.prototype.onButtonRequest(e).then((res) => {
+								if (res) {
+									resolve(res)
+								} else {
+									reject(res)
+								}
+							})
+						})
 						break;
 					case "add":
 						//代码块
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
 						break;
 					default:
 						//默认代码块
+						return new Promise((resolve, reject) => {
+							resolve(e)
+						})
 				}
 			}
 			console.log("btn", btn)
@@ -1021,7 +1037,7 @@ const install = (Vue, options) => {
 			}
 		}
 	}
-	Vue.prototype.selectRealNameInfo = async function(num = 0) {
+	Vue.prototype.selectRealNameInfo = async function(num = 0, hideModal) {
 		// 从实名认证信息表中查找当前帐号是否有实名认证信息
 		const url = this.getServiceUrl('spocp', 'srvspocp_auth_personal_info_select', 'select');
 		let user_info = uni.getStorageSync('login_user_info');
@@ -1085,6 +1101,10 @@ const install = (Vue, options) => {
 					if (backUrl.indexOf('/addInfo/addInfo') !== -1) {
 						return
 					} else {
+						if (hideModal) {
+							// 不显示下面弹框
+							return
+						}
 						uni.setStorageSync('backUrl', backUrl)
 						uni.showModal({
 							title: '提示',

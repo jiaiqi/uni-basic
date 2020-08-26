@@ -235,7 +235,10 @@ export default {
 				app = 'spocp';
 				uni.setStorageSync('activeApp', 'spocp');
 			}
-			let types = this.srvInfo.serviceName.substring(this.srvInfo.serviceName.lastIndexOf('_') + 1);
+			let types = ''
+			if(this.srvInfo&&this.srvInfo.serviceName){
+				this.srvInfo.serviceName.substring(this.srvInfo.serviceName.lastIndexOf('_') + 1);
+			}
 			let colVs = await this.getServiceV2(this.serviceName, types?types:'list', 'list', app);
 			colVs.srv_cols = colVs.srv_cols.filter(item => item.in_list === 1);
 			console.log('colVs', colVs);

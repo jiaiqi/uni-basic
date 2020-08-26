@@ -1,6 +1,11 @@
 <template>
-	<view class="list-wrap">
+	<view  class="list-wrap">
+	<view v-if="exampleInfo.length <= 0" class="no-data">
+		<image src="/static/img/couopn.png" mode=""></image>
+		<text class="none_text">暂无数据</text>
+	</view>
 		<hr-pull-load
+		v-else
 			@refresh="refresh"
 			@loadMore="loadMore"
 			:height="height"
@@ -106,7 +111,13 @@ export default {
 					pageNo: this.currentPage,
 					rownumber: this.srvInfo.rownumber
 				},
-				"condition":[]
+				"condition":[
+					{
+					colName:'store_no',
+					ruleType:'eq',
+					value:uni.getStorageSync('realNameInfo').merchant ? uni.getStorageSync('realNameInfo').merchant.store_no:uni.getStorageSync('realNameInfo').employeeInfo.store_no
+					}
+				]
 			};
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS') {
@@ -165,7 +176,22 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+	.no-data{
+		height: calc(100vh - 100rpx);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		image{
+			width: 100rpx;
+			height: 100rpx;
+		}
+		.none_text{
+			color: #CCCCCC;
+			margin-top: 10rpx;
+		}
+	}
 .list-wrap {
 	display: flex;
 	flex-direction: column;

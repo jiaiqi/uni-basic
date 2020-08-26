@@ -132,7 +132,7 @@ export default {
 		this.serviceName = 'srvspocp_user_real_name_auth';
 		this.type = 'add';
 		let _this = this;
-		this.selectRealNameInfo().then(res => {
+		this.selectRealNameInfo(null,true).then(res => {
 			if (res && res.status == 'success') {
 				uni.showModal({
 					title: '提示',
@@ -405,6 +405,13 @@ export default {
 		},
 		async onButton(e) {
 			let data = this.$refs.bxForm.getFieldModel();
+			if(!data||!data.valid){
+				uni.showToast({
+					title:"请检查输入信息是否有误",
+					icon:'none'
+				})
+				return
+			}
 			let req = this.deepClone(data);
 			let _this = this;
 			switch (e.button_type) {

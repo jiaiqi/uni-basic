@@ -63,12 +63,22 @@ export default {
 				this.selectRealNameInfo().then(res => {
 					if (backUrl && backUrl !== '/' && backUrl !== '/ymt/') {
 						console.log('即将跳转到backUrl页面', backUrl);
-						uni.reLaunch({
-							url: backUrl
-						});
-						// uni.redirectTo({
-						// 	url: backUrl
-						// });
+						if (backUrl.indexOf('/login/login') !== -1) {
+							uni.redirectTo({
+								url: this.$api.homePath,
+								fail(res) {
+									if (res.errMsg) {
+										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
+											window.location.href = _this.$api.homePath;
+										}
+									}
+								}
+							});
+						} else {
+							uni.reLaunch({
+								url: backUrl
+							});
+						}
 					} else {
 						console.log('即将跳转到homePath');
 						uni.redirectTo({
@@ -127,7 +137,6 @@ export default {
 					serviceName: 'srvwx_public_page_authorization'
 				}
 			];
-			let burl = uni.getStorageSync('backUrl');
 			this.$http.post(url, req).then(response => {
 				if (response.data.response[0].response.authUrl) {
 					console.log('成功获取回调地址,', response.data.response);
@@ -190,9 +199,22 @@ export default {
 								backUrl = backUrl.substring(backUrl.lastIndexOf('backUrl=') + 8, backUrl.length);
 								console.log('授权成功，准备返回用户界面backUrl', backUrl);
 							}
-							uni.reLaunch({
-								url: backUrl
-							});
+							if (backUrl.indexOf('/login/login') !== -1) {
+								uni.reLaunch({
+									url: _this.$api.homePath,
+									fail(res) {
+										if (res.errMsg) {
+											if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
+												window.location.href = _this.$api.homePath;
+											}
+										}
+									}
+								});
+							} else {
+								uni.reLaunch({
+									url: backUrl
+								});
+							}
 						} else {
 							uni.reLaunch({
 								url: _this.$api.homePath,
@@ -216,7 +238,7 @@ export default {
 				}
 			});
 		},
-		
+
 		loginAndAuth(e) {
 			//登录并授权
 			console.log(e);
