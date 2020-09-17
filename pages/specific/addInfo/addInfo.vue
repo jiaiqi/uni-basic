@@ -1,559 +1,765 @@
 <template>
-	<view class="cu-card articles " style="min-height: 100vh;height: auto;">
-		<view class="cu-item" :class="{ show: showItem }">
-			<view>
-				<bxform
-					:service="serviceName"
-					ref="bxForm"
-					:pageType="type"
-					:defaultCondition="defaultCondition"
-					:BxformType="type"
-					:fields="fields"
-					v-if="fields.length > 0"
-					@onreset="resetForm"
-					@changeFieldModel="changeFieldModel"
-					@toPage="toPage"
-					:moreConfig="colsV2Data && colsV2Data.more_config ? colsV2Data.more_config : null"
-				></bxform>
-				<bxButtons :buttons="buttons" class="button-box" @on-button-change="onButton($event)" v-if="buttons && buttons.length > 0 && formDisabled != true"></bxButtons>
-				<view class="sublist-content" v-if="type === 'detail' && childService && childService.length > 0">
-					<view class="sublist-box" v-if="showSublist">
-						<view class="child-service" v-for="item in childService" :key="item.service_name">
-							<view
-								class="bg-blue service"
-								v-if="item.foreign_key && item.foreign_key.section_name"
-								:class="{
-									'bg-gray':
-										item.foreign_key &&
-										item.foreign_key.more_config &&
-										item.foreign_key.more_config.statusColor &&
-										item.foreign_key.more_config.statusColor.noStart &&
-										item.childData &&
-										item.childData.data &&
-										item.childData.data &&
-										item.childData.data.length === 0
-								}"
-								@click="toChildList(item)"
-							>
-								<!-- 标题 -->
-								<text class="section_name">{{ item.foreign_key.section_name }}</text>
-								<!-- 内容 -->
-								<text class="section_content" v-if="item.data && item.foreign_key.more_config && item.foreign_key.more_config.resultCol">
-									{{ item.data[item.foreign_key.more_config.resultCol] }}
-								</text>
-								<text
-									class="section_content"
-									v-if="!item.data || (item.data && item.foreign_key.more_config && !item.foreign_key.more_config.resultCol && !item.data[item.foreign_key.more_config.resultCol])"
-								>
-									未填写
-								</text>
-								<!-- 结论 -->
-								<text class="section_verdict"></text>
-							</view>
-						</view>
-					</view>
-				</view>
+	<view class="reg-main">
+		<u-form :model="formModel" ref="uForm" label-width="200" :label-style="labelStyle">
+			<!-- <u-form-item label="压缩图片测试"><u-image width="200rpx" height="200rpx" :src="compressBaseString"></u-image></u-form-item> -->
+			<u-form-item label="证件照片" :required="true" prop="id_card_photo">
+				<u-upload
+					:action="action"
+					:max-count="1"
+					:header="uploadHeader"
+					:form-data="formData"
+					:file-list="fileList"
+					:compress-file="compressFile"
+					:placeholder="`请上传证件照片(必传)`"
+					:before-upload="beforeUpload"
+					@on-success="uploadFileSuccess"
+					@on-list-change="onListChange"
+					@on-remove="removePic"
+					:show-upload-list="true"
+					ref="uUpload"
+				></u-upload>
+			</u-form-item>
+			<u-form-item label="姓名" prop="name" :required="true"><u-input v-model="formModel.name" :placeholder="`请输入姓名`" /></u-form-item>
+			<u-form-item label="性别" :required="true" prop="sex">
+				<radio-group @change="radioChange">
+					<label v-for="(item, index) in sexList" :key="index">
+						<radio class="margin-right-xs" :value="item.value" :checked="formModel.sex === item.value" />
+						<text class="margin-right">{{ item.value }}</text>
+					</label>
+				</radio-group>
+			</u-form-item>
+			<u-form-item label="出生日期" :required="true" prop="date_of_birth">
+				<u-input disabled :border="border" placeholder="请选择出生日期" v-model="formModel.date_of_birth" type="text" @click="showTimePicker = true"></u-input>
+				<u-picker default-time="1990-01-01" v-model="showTimePicker" mode="time" @confirm="confirmDate"></u-picker>
+			</u-form-item>
+			<u-form-item label="地址" :required="true" prop="address"><u-input v-model="formModel.address" :placeholder="`请输入地址`" /></u-form-item>
+			<u-form-item label="证件号码" prop="id_card" :required="true"><u-input v-model="formModel.id_card" :placeholder="`请输入证件号码`" /></u-form-item>
+			<u-form-item label="手机号码" prop="mobile" :required="true"><u-input v-model="formModel.mobile" :placeholder="`请输入手机号码`" /></u-form-item>
+			<u-form-item :label-position="labelPosition" :required="true" label="图形验证码" prop="imageCode" label-width="200">
+				<u-input :border="border" placeholder="请输入图形验证码" v-model="imageCode" type="text" maxlength="4" @blur="validateImageCode" @confirm="validateImageCode"></u-input>
+				<image :src="codeImageString" mode="" class="code-image" @click="getImageCode"></image>
+			</u-form-item>
+			<u-form-item :label-position="labelPosition" :required="true" label="验证码" prop="mobileCode" label-width="200">
+				<u-input :border="border" placeholder="请输入验证码" v-model="mobileCode" type="text"></u-input>
+				<u-button slot="right" size="mini" @click="getCode" class="code-btn">{{ codeTips }}</u-button>
+			</u-form-item>
+			<u-verification-code seconds="60" ref="uCode" :keep-running="true" @change="codeChange"></u-verification-code>
+		</u-form>
+		<view class="button-box"><view class="button" @click="submitForm">提交</view></view>
+		<uni-popup type="bottom" ref="ocrPopup" :maskClick="false">
+			<view class="ocr-info">
+				<view class="title">识别到您的身份证信息如下:</view>
+				<u-form :model="ocrInfo" ref="uForm2" label-width="150">
+					<u-form-item label="姓名"><u-input v-model="ocrInfo.name" /></u-form-item>
+					<u-form-item label="性别">
+						<radio-group @change="radioChange">
+							<label v-for="(item, index) in sexList" :key="index">
+								<radio class="margin-right-xs" :value="item.value" :checked="ocrInfo.sex === item.value" />
+								<text class="margin-right">{{ item.value }}</text>
+							</label>
+						</radio-group>
+					</u-form-item>
+					<u-form-item label="出生日期"><u-input @click="showDatePicker = true" disabled v-model="ocrInfo.birth" /></u-form-item>
+					<u-picker mode="time" v-model="showDatePicker" :params="datePickerParams" @confirm="confirmDate($event, 'ocrInfo')" default-time="1992-01-01"></u-picker>
+					<u-form-item label="身份证号"><u-input v-model="ocrInfo.idNo" /></u-form-item>
+					<u-form-item label="住址"><u-input v-model="ocrInfo.address" /></u-form-item>
+				</u-form>
+				<view class="warn-text">请检查信息是否正确，点击确定按钮将使用以上信息覆盖已填写内容</view>
+				<view class="button-box"><button class="button cu-btn bg-blue" type="primary" @click="coverageInfo(true)">确定</button></view>
 			</view>
-		</view>
+		</uni-popup>
 	</view>
 </template>
 
 <script>
-import bxform from '@/components/bx-form/bx-form.vue';
-import bxButtons from '@/components/bx-buttons/bx-buttons.vue';
+import getCompressImage from '@/common/js/function/compressImage.js';
 export default {
-	components: { bxform, bxButtons },
 	data() {
 		return {
-			fields: [],
-			loadedType: 'srvV2',
-			colsV2Data: null,
-			type: 'add',
-			serviceName: 'srvspocp_user_real_name_auth',
-			condition: [],
-			defaultCondition: [],
-			params: {},
-			formData: {},
-			defaultVal: {},
-			childService: [], // 子表
-			hasChildService: false, //是否拥有子表
-			showSublist: true, //显示子表
-			formDisabled: false,
-			showItem: false,
-			photosData: null
-		};
-	},
-	watch: {
-		defaultVal: {
-			deep: true,
-			handler(newValue, oldValue) {
-				let cond = this.condition.length > 0 ? this.condition : null;
-				if (!this.photosData) {
-					this.getFieldsV2(cond);
+			ocrInfo: {},
+			formModel: {
+				auth_user_no: '',
+				name: '',
+				id_card: '',
+				id_card_photo: '',
+				mobile: '',
+				date_of_birth: '',
+				sex: '',
+				address: ''
+			},
+			showDatePicker: false,
+			datePickerParams: {
+				year: true,
+				month: true,
+				day: true,
+				hour: false,
+				minute: false,
+				second: false
+			},
+			showTimePicker: false,
+			sexList: [
+				{
+					label: '男',
+					value: '男'
+				},
+				{
+					label: '女',
+					value: '女'
 				}
-			}
-		}
-	},
-	computed: {
-		buttons: function() {
-			let buttons = [];
-			let submitBtn = {
-				del_flag: '否',
-				page_type: '增加',
-				button_name: '提交',
-				button_type: 'submit',
-				always_show: false,
-				permission: true,
-				client_type: 'PC,APP',
-				biz_path: '/syscore/',
-				application: 'spocp',
-				is_public: true,
-				service_name: 'srvspocp_user_real_name_auth',
-				id: 18,
-				page_area: '底部按钮',
-				seq: 100
-			};
-			buttons = [submitBtn, ...buttons];
-			let data = {};
-			if (Array.isArray(this.fields)) {
-				this.fields.forEach(item => {
-					data[item['column']] = item['value'];
-				});
-				let fieldModel = data;
-			}
-			return buttons;
-		}
-	},
-	created() {
-		
-	},
-	onLoad() {
-		uni.setStorageSync('activeApp', 'spocp');
-		this.serviceName = 'srvspocp_user_real_name_auth';
-		this.type = 'add';
-		let _this = this;
-		this.selectRealNameInfo(null,true).then(res => {
-			if (res && res.status == 'success') {
-				uni.showModal({
-					title: '提示',
-					content: '已经实名认证,即将跳转到首页',
-					showCancel: false,
-					success(res) {
-						if (res.confirm) {
-							uni.reLaunch({
-								url: _this.$api.homePath,
-								fail(res) {
-									if (res.errMsg) {
-										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-											window.location.href = _this.$api.homePath;
-										}
-									}
-								}
-							});
-						}
+			],
+			rules: {
+				id_card_photo: [
+					{
+						required: true,
+						message: '请上传身份证照片',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
 					}
-				});
-			} else {
-				// 未实名认证 准备实名认证表单
-				this.getFieldsV2(this.condition);
-			}
-		});
+				],
+				name: [
+					{
+						required: true,
+						message: '请输入姓名',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				],
+				date_of_birth: [
+					{
+						required: true,
+						message: '请选择出生日期',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				],
+				sex: [
+					{
+						required: true,
+						message: '请选择性别',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				],
+				address: [
+					{
+						required: true,
+						message: '请选择性别',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				],
+				id_card: [
+					{
+						required: true,
+						message: '请输入证件号码',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				],
+				mobile: [
+					{
+						required: true,
+						message: '请输入手机号码',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					},
+					{
+						validator: (rule, value, callback) => {
+							// 上面有说，返回true表示校验通过，返回false表示不通过
+							// this.$u.test.mobile()就是返回true或者false的
+							return Number.isNaN(Number(value)) !== true && value.length === 11;
+						},
+						message: '请检查手机号格式是否正确',
+						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					}
+				]
+			},
+			imageCode: '',
+			mobileCode: '',
+			border: false,
+			codeImage: '',
+			codeImageString: '',
+			codeTips: '获取验证码',
+			formData: {
+				serviceName: 'srv_bxfile_service',
+				interfaceName: 'add',
+				app_no: 'spocp',
+				table_name: 'bxspocp_user_auth_info',
+				columns: 'id_card_photo'
+				// thumbnailType: 'fwsu_100'
+			},
+			uploadHeader: {
+				bx_auth_ticket: uni.getStorageSync('bx_auth_ticket')
+			},
+			showUploadList: false,
+			action: '',
+			fileList: [],
+			compressFile: {}, //压缩后的File对象
+			compressBaseString: '',
+			compressList: {},
+			lists: [],
+			labelPosition: 'left',
+			labelStyle: {
+				paddingLeft: '50rpx',
+				color: '#000'
+			},
+			serviceName: 'srvspocp_user_real_name_auth',
+			loadingInstance: null
+		};
 	},
 
 	methods: {
-		resetForm(e) {
-			// 重置表单
-			this.fields = null;
-			this.fields = this.deepClone(e);
+		removePic(e) {
+			this.formModel.id_card_photo = null;
 		},
-		toChildList(e) {
-			let data = this.deepClone(e);
-			let formData = this.defaultVal;
-			let condition = [{ colName: e.foreign_key.column_name, ruleType: 'eq', value: formData[e.foreign_key.referenced_column_name] }];
-			if (e.foreign_key && e.foreign_key.more_config && e.foreign_key.more_config.targetType && formData[e.foreign_key.referenced_column_name]) {
-				let targetType = e.foreign_key.more_config.targetType;
-				if (targetType === 'list') {
-					uni.navigateTo({
-						url: '/pages/list/list?serviceName=' + e.service_name + '&cond=' + JSON.stringify(condition)
-					});
-				} else if (targetType === 'detail') {
-					if (e.childData && e.childData.data && e.childData.data.length > 0) {
-						let params = {
-							type: 'update',
-							formDisabled: true,
-							condition: [
-								{
-									colName: 'id',
-									ruleType: 'in',
-									value: e.childData.data[0].id
-								}
-							],
-							serviceName: e.service_name
-							// "defaultVal": row
-						};
-						uni.navigateTo({
-							url: '/pages/formPage/formPage?params=' + JSON.stringify(params)
-						});
-					} else {
-						uni.showModal({
-							title: '提示',
-							content: '暂无数据，是否添加数据',
-							success(res) {
-								if (res.confirm) {
-									let params = {
-										type: 'add',
-										serviceName: e.service_name.replace('_select', '_add')
-										// defaultVal:formData
-									};
-									// referenced_column_name //被引用的字段
-									// column //子表字段
-									console.log(e);
-									if (e.foreign_key && e.foreign_key.referenced_column_name && e.foreign_key.column_name) {
-										params.defaultCondition = [
-											{
-												colName: e.foreign_key.referenced_column_name,
-												ruleType: 'eq',
-												value: formData[e.foreign_key.column_name]
-											}
-										];
-									}
-									uni.navigateTo({
-										url: '/pages/formPage/formPage?params=' + JSON.stringify(params)
-									});
-								}
-							}
-						});
-					}
-				}
-			} else {
-				uni.navigateTo({
-					url: '/pages/list/list?serviceName=' + e.service_name + '&cond=' + JSON.stringify(condition)
-				});
-			}
-		},
-		toPage(e) {
+		confirmDate(e, type) {
 			console.log(e);
-			if (this.params) {
-				e += '&params=' + JSON.stringify(this.params);
-			}
-			uni.navigateTo({
-				url: e
-			});
-		},
-		changeFieldModel(e) {
-			if (e) {
-				this.formData = this.deepClone(e);
+			if (e.month && e.year && e.day) {
+				if (type === 'ocrInfo') {
+					this.ocrInfo.birth = `${e.year}-${e.month}-${e.day}`;
+				} else {
+					this.formModel.date_of_birth = `${e.year}-${e.month}-${e.day}`;
+				}
 			}
 		},
-		async selectList(item) {
-			let app = uni.getStorageSync('activeApp');
-			let url = this.getServiceUrl(app, item.service_name, 'select');
-			let formData = this.defaultVal;
-			if (item.foreign_key && item.foreign_key.referenced_column_name && formData[item.foreign_key.referenced_column_name]) {
-				let req = {
-					serviceName: item.service_name,
-					colNames: ['*'],
-					condition: [{ colName: item.foreign_key.column_name, ruleType: 'eq', value: formData[item.foreign_key.referenced_column_name] }],
-					page: { pageNo: 1, rownumber: 5 },
-					order: []
-				};
+		async submitForm() {
+			let self = this;
+			let formModel = this.deepClone(this.formModel);
+			let valid = await self.$refs.uForm.validate();
+			// (valid => {
+			if (valid) {
+				if (!this.imageCode) {
+					this.$u.toast('请输入图形验证码');
+					return;
+				}
+				if (!this.mobileCode) {
+					this.$u.toast('请输入手机验证码');
+					return;
+				}
+				if (!this.formModel.id_card_photo) {
+					this.$u.toast('请上传身份证照片');
+					return;
+				}
+				let req = [
+					{
+						serviceName: 'srvspocp_user_real_name_auth',
+						condition: [
+							{
+								colName: 'mobile', //手机号
+								ruleType: 'eq',
+								value: formModel.mobile
+							},
+							{
+								colName: 'mobileCode', //验证码
+								ruleType: 'eq',
+								value: this.mobileCode
+							}
+						],
+						data: [formModel]
+					}
+				];
+				let url = this.getServiceUrl('spocp', 'srvspocp_user_real_name_auth', 'operate');
 				let res = await this.$http.post(url, req);
 				if (res.data.state === 'SUCCESS') {
-					return { data: res.data.data, page: res.data.page };
+					await this.selectRealNameInfo();
+					self.currentDialog = self.$dialog({
+						content: '登记成功,即将返回首页',
+						buttons: [
+							{
+								name: '好的', //按钮名称
+								behavior: 'navTo', //按钮动作
+								targetPage: self.$api.homePath
+							}
+						]
+					});
 				} else {
-					return res.data.state;
+					uni.showToast({
+						title: res.data.resultMessage,
+						icon: 'none'
+					});
 				}
 			} else {
-				return false;
+				console.log('验证失败');
+			}
+			// });
+		},
+		radioChange(e, type) {
+			let value = e;
+			value = e.detail.value;
+			if (type && type === 'ocrInfo') {
+				this.ocrInfo.sex = value;
+				this.$set(this.ocrInfo, 'sex', value);
+			} else {
+				this.formModel.sex = value;
+				this.$set(this.formModel, 'sex', value);
 			}
 		},
-		getFieldsV2: async function(condition) {
-			let app = uni.getStorageSync('activeApp');
-			let type = '';
-			if (this.formDisabled) {
-				type = 'detail';
-			}
-			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, 'spocp');
-			if (this.formDisabled) {
-				colVs._fieldInfo.forEach(item => (item.disabled = true));
-			}
-			if (colVs.child_service && Array.isArray(colVs.child_service) && colVs.child_service.length > 0) {
-				// 有子表
-				this.hasChildService = true;
-				this.childService = colVs.child_service;
-				this.childService.forEach((item, index) => {
-					this.selectList(item).then(res => {
-						item.childData = res;
-						if (res.data && res.data.length > 0) {
-							item.data = res.data[0];
-						}
-						if (item.foreign_key && item.foreign_key.more_config && typeof item.foreign_key.more_config === 'string') {
-							try {
-								item.foreign_key.more_config = JSON.parse(item.foreign_key.more_config);
-							} catch (e) {
-								//TODO handle the exception
-								console.log(e);
-							}
-						}
-						this.$set(this.childService, index, item);
-					});
-				});
-				this.childService.filter(item => item.childData);
-			}
-			if (!this.navigationBarTitle) {
-				uni.setNavigationBarTitle({
-					title: colVs.service_view_name
-				});
-			}
-			if (colVs.more_config) {
-				if (typeof colVs.more_config === 'string') {
-					try {
-						colVs.more_config = JSON.parse(colVs.more_config);
-					} catch (e) {
-						//TODO handle the exception
-						console.log(e);
-					}
-				}
-			}
-			this.colsV2Data = colVs;
-			this.showItem = true;
+		deleteItem(index) {
+			this.$refs.uUpload.remove(index);
+		},
+		async beforeUpload(index, list) {
 			let self = this;
-			switch (this.type) {
-				case 'update':
-					this.fields = this.setFieldsDefaultVal(colVs._fieldInfo, this.defaultVal);
-					break;
-				case 'add':
-					let valueArr = Object.values(this.formData);
-					if (valueArr.length > 0) {
-						Object.keys(this.formData).forEach(item => {
-							colVs._fieldInfo.forEach(field => {
-								if (item === field.column) {
-									field['value'] = this.formData[item];
-								}
-							});
-						});
-					}
-					if (this.defaultCondition && Array.isArray(this.defaultCondition) && colVs._fieldInfo && Array.isArray(colVs._fieldInfo)) {
-						console.log('this.defaultCondition', this.defaultCondition, colVs._fieldInfo);
-						let arr = [];
-						this.defaultCondition.forEach(cond => {
-							colVs._fieldInfo.forEach(field => {
-								if (cond.colName === field.column) {
-									field['value'] = cond['value'];
-									field['disabled'] = true;
-								}
-							});
-						});
-					}
-					if (condition && Array.isArray(condition)) {
-						condition.forEach(item => {
-							colVs._fieldInfo.forEach(field => {
-								if (field.column === item.colName) {
-									field.condition = item.value;
-								}
-								if (typeof item.value !== 'string' && Array.isArray(item.value)) {
-									item.value.forEach(cond => {
-										if (cond.colName === cond.value && field.column === cond.value) {
-											field['display'] = false;
-										}
-									});
-								}
-								if (this.params.defaultVal) {
-									// 赋默认值
-									// field.value = this.params.defaultVal[field.column]
-								}
-							});
-						});
-					}
-					if (Object.values(this.defaultVal).length > 0) {
-						this.fields = this.setFieldsDefaultVal(colVs._fieldInfo, this.defaultVal);
-					} else {
-						this.fields = colVs._fieldInfo;
-					}
-					this.fields.forEach(item => {
-						if (item.column === 'auth_user_no') {
-							item.disabled = true;
-							item.value = uni.getStorageSync('login_user_info').user_no;
-						}
-					});
-					break;
-				case 'detail':
-					this.fields = this.setFieldsDefaultVal(colVs._fieldInfo, this.defaultVal);
-					break;
-				default:
-					break;
+			console.time('compress-time');
+			let res = await getCompressImage(list[0].file, 0.1, 0.1);
+			console.timeEnd('compress-time');
+			this.compressBaseString = res.base64;
+			console.log('压缩图片信息：', res);
+			this.compressFile = res.file;
+			this.loadingInstance = this.$loading({
+				lock: true,
+				text: '正在上传', //提示文字
+				fullscreen: false, // 是否全屏背景
+				loadingMode: 'flower', //加载样式 circle-圆环 flower-...
+				size: '90', //加载的图标的大小 fontsize
+				textColor: '#fff' //提示文字的color
+				// color:"#009688" // mode为circle时 可以设置圆环颜色
+				// background: 'rgba(0, 0, 0, 0.7)' //遮罩的背景颜色
+			});
+			return true;
+		},
+		uploadFileSuccess(e) {
+			// 图片上传成功
+			console.log(e);
+			try {
+				this.loadingInstance.close();
+			} catch (e) {
+				//TODO handle the exception
+				console.log(e);
+			}
+			if (e.file_no) {
+				this.formModel.id_card_photo = e.file_no;
+				this.loadingInstance = this.$loading({
+					lock: true,
+					text: '正在识别', //提示文字
+					fullscreen: false, // 是否全屏背景
+					loadingMode: 'flower', //加载样式 circle-圆环 flower-...
+					size: '90', //加载的图标的大小 fontsize
+					textColor: '#fff' //提示文字的color
+					// color:"#009688" // mode为circle时 可以设置圆环颜色
+					// background: 'rgba(0, 0, 0, 0.7)' //遮罩的背景颜色
+				});
+				this.toOCR(e.file_no);
+			} else {
+				alert('上传失败');
 			}
 		},
-		async getDetailfieldModel() {
-			let params = this.deepClone(this.params);
-			let app = uni.getStorageSync('activeApp');
-			params.serviceName = params.serviceName.replace('_update', '_select').replace('_add', '_select');
-			let url = this.getServiceUrl(app, params.serviceName, 'select');
-			const req = {
-				colNames: ['*'],
-				condition: params.condition,
-				page: { pageNo: 1, rownumber: 5 },
-				serviceName: params.serviceName
-			};
+		onListChange(e) {
+			this.lists = e;
+		},
+		async toOCR(file_no) {
+			// ocr识别身份证信息
+			let self = this;
+			const reqUrl = self.getServiceUrl('daq', 'srvdaq_orc_idcard_extraction', 'operate');
+			const reqData = [
+				{
+					serviceName: 'srvdaq_orc_idcard_extraction',
+					data: [
+						{
+							file_no: file_no
+						}
+					]
+				}
+			];
+			let response = await self.$http.post(reqUrl, reqData, 'test');
+			// 得到识别的文字
+			try {
+				this.loadingInstance.close();
+			} catch (e) {
+				//TODO handle the exception
+				console.log(e);
+			}
+			if (response.data.state === 'SUCCESS') {
+				const resp = response.data.response[0].response;
+				this.getOcrInfo(resp);
+			} else {
+				console.log(response.data.resultMessage);
+			}
+			// uni.hideLoading()
+		},
+		getOcrInfo(e) {
+			// 拿到ocr接口返回的数据
+			if (e) {
+				let date = '';
+				if (e.birth) {
+					date = e.birth;
+					date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
+				}
+				let ocrInfo = {
+					name: e.name,
+					sex: e.sex,
+					idNo: e.idcard,
+					address: e.address,
+					birth: date
+				};
+				if (!e.idcard || !e.name) {
+					// 识别失败
+					uni.showToast({
+						title: '识别失败,请您上传正确的证件照片',
+						icon: 'none'
+					});
+					this.$refs.uUpload.clear();
+				} else {
+					this.ocrInfo = ocrInfo;
+					this.$refs.ocrPopup.open();
+				}
+			}
+		},
+		hideOcrPopup() {
+			// 隐藏ocr弹出框
+			this.$refs.ocrPopup.close();
+		},
+		coverageInfo(dontHide) {
+			// 使用ocr识别出的信息覆盖已填写信息
+			Object.keys(this.formModel).forEach(key => {
+				switch (key) {
+					case 'name':
+						this.formModel.name = this.ocrInfo.name;
+						break;
+					case 'id_card':
+						this.formModel.id_card = this.ocrInfo.idNo;
+						break;
+					case 'date_of_birth':
+						this.formModel.date_of_birth = this.ocrInfo.birth;
+						break;
+					case 'sex':
+						this.formModel.sex = this.ocrInfo.sex;
+						break;
+					case 'address':
+						this.formModel.address = this.ocrInfo.address;
+						break;
+				}
+				this.$refs.uForm.validate();
+			});
+			if (dontHide === true) {
+				this.hideOcrPopup();
+			}
+		},
+		codeChange(text) {
+			this.codeTips = text;
+		},
+
+		getCode() {
+			//获取验证码
+			if (!this.formModel.mobile) {
+				uni.showToast({
+					title: '请先填写手机号',
+					icon: 'none'
+				});
+				return;
+			} else {
+				let isMobile = this.$u.test.mobile(this.formModel.mobile);
+				if (!isMobile) {
+					this.$u.toast('手机号格式有误,请检查并重新输入');
+					return;
+				}
+			}
+			if (!this.imageCode) {
+				uni.showToast({
+					title: '请先填写图片验证码',
+					icon: 'none'
+				});
+				return;
+			}
+			if (this.$refs.uCode.canGetCode) {
+				// 模拟向后端请求验证码
+				uni.showLoading({
+					title: '正在获取验证码',
+					mask: true
+				});
+				this.getMobileCode();
+			} else {
+				this.$u.toast('请等待倒计时结束后再发送');
+			}
+		},
+		async getImageCode() {
+			let req = [
+				{
+					serviceName: 'srvsso_matching_image_code',
+					colNames: ['*']
+				}
+			];
+			let url = this.getServiceUrl('sso', 'srvsso_matching_image_code', 'operate');
 			let res = await this.$http.post(url, req);
-			if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
-				// this.defaultVal = res.data.data[0];
-				return res.data.data[0];
+			if (res.data.state === 'SUCCESS' && res.data.response && Array.isArray(res.data.response) && res.data.response.length > 0) {
+				let data = res.data.response[0];
+				if (data.response && data.response.base64String) {
+					this.codeImageString = data.response.base64String;
+				}
+			}
+		},
+		async validateImageCode() {
+			if (!this.imageCode) {
+				uni.showToast({
+					title: '请输入图形验证码',
+					icon: 'none'
+				});
+				return;
+			} else {
+				if (this.imageCode.length < 4) {
+					return;
+				}
+			}
+			let req = [
+				{
+					serviceName: 'srvsso_matching_image_code_check',
+					colNames: ['*'],
+					data: [
+						{
+							imageCode: this.imageCode
+						}
+					]
+				}
+			];
+			let url = this.getServiceUrl('sso', 'srvsso_matching_image_code_check', 'operate');
+			let res = await this.$http.post(url, req);
+			if (res.data.state === 'SUCCESS' && res.data.response && Array.isArray(res.data.response) && res.data.response.length > 0) {
+				let data = res.data.response[0];
+				if (data.response && data.response.check_state && data.response.check_state === 'SUCCESS') {
+					return true;
+				} else {
+					this.$u.toast('图形验证码输入有误，请重新输入');
+					return false;
+				}
+			} else {
+				this.$u.toast('图形验证码输入有误，请重新输入');
+				return false;
+			}
+		},
+		async getMobileCode() {
+			uni.hideLoading();
+			let isValidate = await this.validateImageCode();
+			if (!isValidate) {
+				this.$u.toast('图形验证码输入有误，请重新输入');
+				return;
+			}
+			if (!this.formModel.mobile) {
+				this.$u.toast('请先输入手机号码');
+				return;
+			}
+			let req = [
+				{
+					serviceName: 'srvsso_matching_send_node',
+					colNames: ['*'],
+					data: [
+						{
+							business_type: 'ZHBT_YMT_SMRZ', //业务类型
+							mobile: this.formModel.mobile
+						}
+					]
+				}
+			];
+			// 这里此提示会被this.start()方法中的提示覆盖
+			this.$u.toast('验证码已发送');
+			// 通知验证码组件内部开始倒计时
+			this.$refs.uCode.start();
+			let url = this.getServiceUrl('sso', 'srvsso_matching_send_node', 'operate');
+			let res = await this.$http.post(url, req);
+			await this.getImageCode();
+			if (res.data.state === 'SUCCESS' && res.data.response && Array.isArray(res.data.response) && res.data.response.length > 0) {
+				let data = res.data.response[0];
+				if (data.response && data.response.check_state && data.response.check_state === 'SUCCESS') {
+					return true;
+				} else {
+					return false;
+				}
 			} else {
 				return false;
 			}
 		},
-		async onButton(e) {
-			let data = this.$refs.bxForm.getFieldModel();
-			if(!data||!data.valid){
-				uni.showToast({
-					title:"请检查输入信息是否有误",
-					icon:'none'
-				})
-				return
-			}
-			let req = this.deepClone(data);
-			let _this = this;
-			switch (e.button_type) {
-				case 'submit':
-					console.log('addServiceName:', e.service_name);
-					if (req) {
-						Object.keys(req).forEach(item => {
-							if (Array.isArray(req[item])) {
-								req[item] = req[item].toString();
-							}
-						});
-						req = [{ serviceName: e.service_name, data: [req] }];
-						let app = 'spocp';
-						let url = this.getServiceUrl(app, e.service_name, 'operate');
-						if (e.serviceName === 'srvspocp_user_real_name_auth') {
-							url = this.getServiceUrl(app, e.service_name, 'operate');
-						}
-						console.log(url, e);
-						let res = await this.$http.post(url, req);
-						console.log(url, res.data);
-						if (res.data.state === 'SUCCESS') {
-							uni.showModal({
-								title: '提示',
-								content: '登记成功,即将返回首页',
-								confirmText: '好的',
-								showCancel: false,
-								success(res) {
-									if (res.confirm) {
-										uni.reLaunch({
-											url: _this.$api.homePath,
-											fail(res) {
-												if (res.errMsg) {
-													if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-														window.location.href = _this.$api.homePath;
-													}
-												}
-											}
-										});
-									} else {
-										uni.redirectTo({
-											url: '/pages/specific/merchantReg/merchantReg'
-										});
-										console.log('跳转到商家登记页面');
-									}
-								}
-							});
-						} else {
-							uni.showToast({
-								title: res.data.resultMessage,
-								icon: 'none'
-							});
-						}
-					}
-					break;
-				case 'reset':
-					let res = this.$refs.bxForm.onReset();
-					if (res) {
-						uni.showToast({
-							title: '已重置'
-						});
-					} else {
-						uni.showToast({
-							title: '无效操作'
-						});
-					}
-					break;
-			}
+		// 预览图片
+		doPreviewImage(url, index) {
+			const images = this.lists.map(item => item.url || item.path);
+			uni.previewImage({
+				urls: images,
+				current: url,
+				success: () => {},
+				fail: () => {
+					uni.showToast({
+						title: '预览图片失败',
+						icon: 'none'
+					});
+				}
+			});
 		}
+	},
+	created() {
+		this.action = this.$api.upload;
+		this.getImageCode();
+	},
+	// 必须要在onReady生命周期，因为onLoad生命周期组件可能尚未创建完毕
+	onReady() {
+		this.$refs.uForm.setRules(this.rules);
+	},
+	onLoad() {
+		let login_user_info = uni.getStorageSync('login_user_info');
+		if (login_user_info) {
+			this.formModel.auth_user_no = login_user_info.user_no;
+		}
+		uni.setStorageSync('activeApp', 'spocp');
+		this.serviceName = 'srvspocp_user_real_name_auth';
+		this.type = 'add';
+		let self = this;
+		this.selectRealNameInfo(null, true).then(res => {
+			if (res && res.status == 'success') {
+				self.currentDialog = self.$dialog({
+					content: '已经实名认证,即将跳转到我的二维码页面',
+					buttons: [
+						{
+							name: '好的', //按钮名称
+							behavior: 'navTo', //按钮动作
+							targetPage: self.$api.homePath
+						}
+						// {
+						// 	name: '取消', //按钮名称
+						// 	behavior: 'navTo', //按钮动作
+						// 	targetPage: '/pages/specific/qrCode/qrCode'
+						// }
+					]
+				});
+				// uni.showModal({
+				// 	title: '提示',
+				// 	content: '已经实名认证,即将跳转到首页',
+				// 	showCancel: false,
+				// 	success(res) {
+				// 		if (res.confirm) {
+				// 			uni.reLaunch({
+				// 				url: self.$api.homePath,
+				// 				fail(res) {
+				// 					if (res.errMsg) {
+				// 						if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
+				// 							window.location.href = self.$api.homePath;
+				// 						}
+				// 					}
+				// 				}
+				// 			});
+				// 		}
+				// 	}
+				// });
+			} else {
+				// 未实名认证 准备实名认证表单
+			}
+		});
 	}
 };
 </script>
 
 <style lang="scss" scoped>
-.sublist-content {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	margin: 50rpx 20rpx;
-	.sublist-box {
-		width: 100%;
-		display: flex;
-		border: 1px dashed #efefef;
-		justify-content: space-between;
-		padding: 10rpx;
-		flex-wrap: wrap;
-		.child-service {
-			// width: 50%;
-			width: calc(50% - 20rpx);
-			height: 150rpx;
+.reg-main {
+	// regbg@2x.png
+	width: 100vw;
+	height: 100vh;
+	background-color: #fff;
+	// background-color: #f4f6fa;
+	// background-image: url(../../../static/img/regbg@2x.png);
+	background-position: bottom;
+	background-size: 100%;
+	background-repeat: no-repeat;
+	.u-form {
+		background-color: #fff;
+		padding-left: 30rpx;
+		.code-image {
+			width: 200rpx;
+			height: 80rpx;
+			border: 1px dashed #f1f1f1;
+			margin-right: 20rpx;
+		}
+		.code-btn {
+			margin-right: 20rpx;
+			background-color: rgb(54, 119, 238);
+			color: #fff;
+		}
+		.pre-box {
 			display: flex;
-			justify-content: center;
 			align-items: center;
-			border-radius: 10rpx;
-			margin: 10rpx;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			width: 100rpx;
+			height: 100rpx;
+		}
+		// .pre-item {
+		// 	height: 140rpx;
+		// 	width: 100%;
+		// 	border-radius: 10rpx;
+		// 	overflow: hidden;
+		// 	position: relative;
+		// 	margin-bottom: 20rpx;
+		// }
+		// /deep/ .slot-btn {
+		// 	width: 329rpx;
+		// 	height: 140rpx;
+		// 	display: flex;
+		// 	justify-content: center;
+		// 	align-items: center;
+		// 	background: rgb(244, 245, 246);
+		// 	border-radius: 10rpx;
+		// }
+		// .u-progress {
+		// 	position: absolute;
+		// 	bottom: 10rpx;
+		// 	left: 8rpx;
+		// 	right: 8rpx;
+		// 	z-index: 9;
+		// 	width: auto;
+		// }
+		// // .pre-item-image {
+		// // 	width: 100%;
+		// // 	height: 140rpx;
+		// // }
+		// // .u-delete-icon {
+		// // 	position: absolute;
+		// // 	top: 10rpx;
+		// // 	right: 10rpx;
+		// // 	z-index: 10;
+		// // 	background-color: $u-type-error;
+		// // 	border-radius: 100rpx;
+		// // 	width: 44rpx;
+		// // 	height: 44rpx;
+		// // 	display: flex;
+		// // 	align-items: center;
+		// // 	justify-content: center;
+		// // }
+	}
+	.button-box {
+		display: flex;
+		padding: 40rpx 0;
+		width: 80%;
+		margin: 0 auto;
+		justify-content: space-around;
+		.button {
+			padding: 10rpx 50rpx;
+			border-radius: 50rpx;
+			flex: 1;
+			max-width: 70%;
 			text-align: center;
-			font-size: 12px;
-			button {
-				flex: 1;
-			}
-			.service {
-				height: 100%;
-				width: 100%;
-				border-radius: 10rpx;
-				display: flex;
-				flex-direction: column;
-				justify-content: flex-start;
-			}
-			.section_name {
-				font-size: 12px;
-				padding: 10rpx;
-				overflow: hidden;
-				white-space: nowrap;
-				text-overflow: ellipsis;
-				font-size: 12px;
-				display: flex;
-			}
-			.section_content {
-				font-weight: 700;
-				padding-top: 10px;
-				display: flex;
-				flex: 1;
-				justify-content: center;
+			background: linear-gradient(to right, rgb(54, 119, 238) 0%, rgba(54, 119, 238, 0.9) 70%, rgba(54, 119, 238, 0.7) 100%);
+			color: #fff;
+			&:active {
+				transform: translateY(2px) translateX(1px);
 			}
 		}
 	}
 }
-.articles {
-	background-color: #c4e5ff !important;
-	.cu-item {
-		opacity: 0;
-		.button-box {
-			uni-view {
-				flex: 1;
-			}
-			/deep/ .cu-btn {
-				width: 300rpx;
-			}
-		}
-		&.show {
-			opacity: 1;
-			transition: all 2s;
+
+.ocr-info {
+	background-color: #fff;
+	padding: 20rpx;
+	.u-form {
+		padding-left: 0;
+	}
+	.title {
+		padding: 20rpx 0;
+		font-weight: bold;
+	}
+	.warn-text {
+		padding: 20rpx 0 50rpx;
+	}
+	.button-box {
+		display: flex;
+		// justify-content: space-between;
+		justify-content: center;
+		.button {
+			width: calc(50% - 10rpx);
 		}
 	}
 }

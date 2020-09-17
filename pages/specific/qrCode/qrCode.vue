@@ -1,14 +1,49 @@
 <template>
-	<view class="content">
-		<!-- <view class="top"></view> -->
-		<view class="title">智慧宝塔一码通</view>
+	<view class="qr-code-warp ">
+		<!-- <view class=" content"> -->
+		<view class="c-form">
+			<view class="c-form-item">
+				<view class="label">姓名</view>
+				<view class="value">{{ realNameInfo ? realNameInfo.name : '' }}</view>
+			</view>
+			<view class="c-form-item">
+				<view class="label">证件号码</view>
+				<view class="value">{{ realNameInfo ? realNameInfo.id_card : '' }}</view>
+			</view>
+		</view>
+		<view class="tip">
+			<view class="title"><view class="text">我的票据二维码</view></view>
+			<view class="content-text">市民可通过电子身份二维码在全域景点进行扫码入场，无需携带卡片身份证</view>
+		</view>
+		<view class="qr-code-box">
+			<view>
+				<uni-qrcode
+					v-if="qrCodeData"
+					style="opacity: 0;"
+					v-show="isShow"
+					cid="qrcode"
+					:text="qrCodeData.qr_code_str"
+					:size="size"
+					:logo="logo"
+					makeOnLoad
+					@makeComplete="makeComplete"
+				></uni-qrcode>
+				<image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image>
+				<view class="tip-text" v-show="!isShow">
+					<view v-show="!iconIsShow" class="tgtit">
+						<text class="left-text margin-right-xs">更新于{{ refreshTime }}</text>
+						<text @click="refreshCode" class="lg text-blue cuIcon-refresh right_text"></text>
+					</view>
+					<view v-show="iconIsShow" class="tgtit">
+						<text class="lg text-blue cuIcon-roundcheckfill right_text"></text>
+						<text>已刷新</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<!-- 	<view class="title">智慧宝塔一码通</view>
 		<view class="banner">
-	<!-- 		<dl>
-				<dt><image style="margin-top: -80upx;" :src="wxUserInfo.headimgurl" mode=""></image></dt>
-				<dd>{{ wxUserInfo.nickname }}</dd>
-			</dl> -->
 			<view class="img">
-				<!-- <image src="/static/img/ewm.jpg" mode=""> -->
 				<uni-qrcode
 					v-if="qrCodeData"
 					style="opacity: 0;"
@@ -32,17 +67,15 @@
 				<text>已刷新</text>
 			</view>
 			<view class="sharbuttn">
-				<!-- <view class="btn" @click="toDetail('person')">个人信息</view> -->
-				<!-- <view class="btn" @click="toDetail('merchant')">商户信息</view> -->
 			</view>
-		</view>
+		</view> -->
 	</view>
 </template>
 
 <script>
 import uQRCode from '@/common/uqrcode.js';
 import uniQrcode from '@/components/uni-qrcode/uni-qrcode';
-import formateDate from '@/common/js/function/formatDate.js';
+import formatDate from '@/common/js/function/formatDate.js';
 export default {
 	name: 'qrCodeShow',
 	components: { uniQrcode },
@@ -53,7 +86,8 @@ export default {
 			type: 0,
 			qrcodeSrc: '',
 			size: 250,
-			logo: '../../../static/logo.png',
+			logo: '/static/img/tower.jpg',
+			// logo: '/static/logo.png',
 			qrCodeData: '',
 			isRefresh: false,
 			isShow: true,
@@ -61,13 +95,23 @@ export default {
 			textIsShow: false,
 			qrtimer: '',
 			wxUserInfo: uni.getStorageSync('backWxUserInfo'),
-			iconIsShow:false
+			iconIsShow: false,
+			refreshTime: '',
+			realNameInfo: {}
 		};
+	},
+
+	mounted() {
+		let realNameInfo = uni.getStorageSync('realNameInfo');
+		if (realNameInfo && realNameInfo.data) {
+			this.realNameInfo = realNameInfo.data;
+		}
 	},
 	onLoad() {
 		this.selectRealNameInfo().then(res => {
-			if (res.status === 'success') {
+			if (res && res.status === 'success') {
 				// 已经注册
+				this.realNameInfo = res.data;
 				this.getQrCodeText();
 			}
 		});
@@ -94,12 +138,13 @@ export default {
 		refreshCode() {
 			this.isRefresh = true;
 			this.textIsShow = true;
-			this.a = '112232343';
 			this.getQrCodeText();
 		},
 		/* 获取生成二维码字符串**/
 		async getQrCodeText() {
+			// return
 			this.isShow = true;
+			this.refreshTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss');
 			this.qrCodeData = '';
 			const url = this.getServiceUrl('spocp', 'srvspocp_qr_code_create', 'operate');
 			const req = [
@@ -112,17 +157,12 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS' && res.data.resultCode === 'SUCCESS') {
 				this.qrCodeData = res.data.response[0].response;
-				// let nowTime = new Date();
-				// nowTime = formatDate(nowTime, 'YYYY-MM-DD HH:mm:ss');
-				// this.qrCodeData.refreshTime = nowTime;
-				this.textIsShow = true;
-				this.isRefresh = false;
-				setTimeout(()=>{
-					this.iconIsShow = true
-				},500)
-				setTimeout(()=>{
-					this.iconIsShow = false
-				},2000)
+				setTimeout(() => {
+					this.iconIsShow = true;
+				}, 500);
+				setTimeout(() => {
+					this.iconIsShow = false;
+				}, 2000);
 				this.qrtimer = setInterval(() => {
 					this.automaticRefreshCode(this.qrCodeData.expired_date);
 				}, 1000);
@@ -148,10 +188,83 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.qr-code-warp {
+	width: 100%;
+	height: 100vh;
+	background-color: #eaf1fd;
+	// background-color: #e1eafa;
+	box-sizing: border-box;
+	padding: 20rpx;
+	display: flex;
+	flex-direction: column;
+	.c-form {
+		// margin: 50rpx;
+		font-size: 28rpx;
+		margin: 20rpx;
+		margin-bottom: 50rpx;
+		.c-form-item {
+			color: #3677fe;
+			&:first-child {
+				margin-bottom: 30rpx;
+			}
+			.value {
+				margin-top: 8rpx;
+			}
+		}
+	}
+	.tip {
+		min-height: 300rpx;
+		width: 100%;
+		background-color: #fff;
+		border-radius: 20rpx;
+		padding: 30rpx 50rpx;
+		.title {
+			display: flex;
+			margin: 0;
+			padding: 0;
+			color: #333;
+			font-size: 32rpx;
+			text-indent: 20px;
+			line-height: 60rpx;
+			position: relative;
+			&::before {
+				content: '';
+				position: absolute;
+				left: 0px;
+				height: 28rpx;
+				top: 14rpx;
+				width: 5px;
+				background-color: #3677fe;
+			}
+		}
+		.content-text {
+			color: #77818c;
+			line-height: 48rpx;
+			margin-top: 30rpx;
+		}
+	}
+	.qr-code-box {
+		display: flex;
+		justify-content: center;
+		margin-top: 80rpx;
+		.code_img {
+			width: 200px;
+			height: 200px;
+			border: none;
+			margin: 0;
+			padding: 0;
+		}
+		.tip-text {
+			.left-text {
+				font-size: 26rpx;
+			}
+		}
+	}
+}
 .content {
 	height: 100vh;
 	width: 100vw;
-	background-color: #DA3D3E;
+	background-color: #e1eafa;
 	// background-color: #007994;
 	.title {
 		color: #fff;
@@ -164,7 +277,7 @@ export default {
 		background-color: #ffffff;
 		border-radius: 10rpx;
 		margin: 50rpx;
-		padding:75rpx 50rpx 50rpx;
+		padding: 75rpx 50rpx 50rpx;
 		.img {
 			width: 500upx;
 			height: 500upx;
@@ -190,7 +303,7 @@ export default {
 .code_img {
 	width: 200px;
 	height: 200px;
-	border:1px solid #CCCCCC;
+	border: 1px solid #cccccc;
 	padding: 20rpx;
 }
 .right_text {

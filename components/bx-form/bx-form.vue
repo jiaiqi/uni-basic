@@ -225,13 +225,11 @@ export default {
 					case 'id_card':
 						item.value = this.ocrInfo.idNo;
 						this.fieldModel.id_card = this.ocrInfo.idNo;
-						this.ocrInfo.birth;
 						item.disabled = true;
 						break;
 					case 'address':
 						item.value = this.ocrInfo.address;
 						this.fieldModel.address = this.ocrInfo.address;
-						this.ocrInfo.birth;
 						item.disabled = true;
 						break;
 				}

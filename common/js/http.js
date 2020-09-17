@@ -10,7 +10,9 @@ var loading = null
 fly.interceptors.request.use((request) => {
 	//给所有请求添加自定义header
 	// 如果是浏览器运行的记录 请求的页面path和参数
-	if (request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1) {
+	if (request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1 || request.url.indexOf(
+			'srvsso_matching_image_code_check') !== -1 || request.url.indexOf('srvsso_matching_send_node') !== -1 || request.url
+		.indexOf('srvsso_matching_image_code') !== -1 || request.url.indexOf('srvspocp_user_reserve_record_select') !== -1)  {
 		// uni.showLoading({
 		// 	mask: true,
 		// 	title:'正在识别'
@@ -74,8 +76,7 @@ fly.interceptors.response.use(
 			loading ? loading.close() : ''
 		}
 
-		if (res.data.resultCode === "0011" || (res.request.headers.USERlOGIN && res.request.headers.USERlOGIN ===
-				"noneLogin")) { //未登录或登录过期
+		if (res.data.resultCode === "0011") { //未登录或登录过期
 			uni.setStorageSync('isLogin', false)
 			uni.setStorageSync('stophttp', true)
 			if (res.request.headers.requrl) {

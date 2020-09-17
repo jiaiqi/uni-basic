@@ -118,7 +118,17 @@ export default {
 					fail(res) {
 						if (res.errMsg) {
 							// #ifdef H5
-							window.location.href = e.dest_page;
+							if (e.dest_page === 'https://wap.lotsmall.cn/vue/custompage?id=12490&m_id=162') {
+								this.selectRealNameInfo(null, true).then(res => {
+									if (res && res.status == 'success') {
+										window.location.href = e.dest_page;
+									} else {
+										console.log('未实名认证');
+									}
+								});
+							} else {
+								window.location.href = e.dest_page;
+							}
 							// #endif
 							// #ifdef MP
 							uni.navigateTo({

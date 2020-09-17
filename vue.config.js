@@ -1,4 +1,3 @@
-console.error('env:', process.env.NODE_ENV)
 module.exports = {
 	// chainWebpack: (config) => {
 	// 	// 发行或运行时启用了压缩时会生效

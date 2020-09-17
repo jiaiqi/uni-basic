@@ -296,6 +296,7 @@
 		box-sizing: border-box;
 	}
 
+	/* #ifndef APP-NVUE */
 	::-webkit-scrollbar,
 	::-webkit-scrollbar,
 	::-webkit-scrollbar {
@@ -305,21 +306,24 @@
 		-webkit-appearance: none;
 		background: transparent;
 	}
+	/* #endif */
 
 	.u-scroll-box {
 		position: relative;
+		/* #ifdef MP-TOUTIAO */
+		white-space: nowrap;
+		/* #endif */
 	}
 
 	/* #ifdef H5 */
 	// 通过样式穿透，隐藏H5下，scroll-view下的滚动条
-	scroll-view /deep/ ::-webkit-scrollbar {
+	scroll-view ::v-deep ::-webkit-scrollbar {
 		display: none;
 		width: 0 !important;
 		height: 0 !important;
 		-webkit-appearance: none;
 		background: transparent;
 	}
-
 	/* #endif */
 
 	.u-scroll-view {
@@ -330,7 +334,9 @@
 
 	.u-tab-item {
 		position: relative;
+		/* #ifndef APP-NVUE */
 		display: inline-block;
+		/* #endif */
 		text-align: center;
 		transition-property: background-color, color;
 	}
@@ -341,7 +347,7 @@
 	}
 
 	.u-tabs-scorll-flex {
-		display: flex;
+		@include vue-flex;
 		justify-content: space-between;
 	}
 </style>

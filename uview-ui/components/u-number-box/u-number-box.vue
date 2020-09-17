@@ -1,6 +1,6 @@
 <template>
 	<view class="u-numberbox">
-		<view class="u-icon-minus" @touchstart.stop="btnTouchStart('minus')" @touchend.stop="clearTimer" :class="{ 'u-icon-disabled': disabled || inputVal <= min }"
+		<view class="u-icon-minus" @touchstart.stop.prevent="btnTouchStart('minus')" @touchend.stop.prevent="clearTimer" :class="{ 'u-icon-disabled': disabled || inputVal <= min }"
 		    :style="{
 				background: bgColor,
 				height: inputHeight + 'rpx',
@@ -17,7 +17,7 @@
 				height: inputHeight + 'rpx',
 				width: inputWidth + 'rpx'
 			}" />
-		<view class="u-icon-plus" @touchstart.stop="btnTouchStart('plus')" @touchend.stop="clearTimer" :class="{ 'u-icon-disabled': disabled || inputVal >= max }"
+		<view class="u-icon-plus" @touchstart.stop.prevent="btnTouchStart('plus')" @touchend.stop.prevent="clearTimer" :class="{ 'u-icon-disabled': disabled || inputVal >= max }"
 		    :style="{
 				background: bgColor,
 				height: inputHeight + 'rpx',
@@ -145,8 +145,13 @@
 				// 只有value的改变是来自外部的时候，才去同步inputVal的值，否则会造成循环错误
 				if(!this.changeFromInner) {
 					this.inputVal = v1;
+					// 因为inputVal变化后，会触发this.handleChange()，在其中changeFromInner会再次被设置为true，
+					// 造成外面修改值，也导致被认为是内部修改的混乱，这里进行this.$nextTick延时，保证在运行周期的最后处
+					// 将changeFromInner设置为false
+					this.$nextTick(function(){
+						this.changeFromInner = false;
+					})
 				}
-				this.changeFromInner = false;
 			},
 			inputVal(v1, v2) {
 				// 为了让用户能够删除所有输入值，重新输入内容，删除所有值后，内容为空字符串
@@ -280,6 +285,7 @@
 				this.$nextTick(() => {
 					this.inputVal = val;
 				})
+				this.handleChange(val, 'blur');
 			},
 			handleChange(value, type) {
 				if (this.disabled) return;
@@ -309,7 +315,7 @@
 		text-align: center;
 		padding: 0;
 		margin: 0 6rpx;
-		display: flex;
+		@include vue-flex;
 		align-items: center;
 		justify-content: center;
 	}
@@ -317,7 +323,7 @@
 	.u-icon-plus,
 	.u-icon-minus {
 		width: 60rpx;
-		display: flex;
+		@include vue-flex;
 		justify-content: center;
 		align-items: center;
 	}

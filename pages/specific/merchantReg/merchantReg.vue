@@ -1,5 +1,5 @@
 <template>
-	<view class="cu-card articles " style="min-height: 100vh;height: auto;">
+	<view class="merchant-reg" style="min-height: 100vh;height: auto;">
 		<view class="cu-item" :class="{ show: showItem }">
 			<view>
 				<bxform
@@ -87,53 +87,9 @@ export default {
 			return buttons;
 		}
 	},
-	
-	onShow() {
-		// let self = this;
-		// let condition = this.condition;
-		// if (this.type === 'detail' || this.type === 'update') {
-		// 	this.getDetailfieldModel().then(res => {
-		// 		if (!this.photosData) {
-		// 			this.defaultVal = res;
-		// 		}
-		// 		if (this.params.formDisabled == true) {
-		// 			this.formDisabled = true;
-		// 		}
-		// 		uni.$on('sendDefaultVal', e => {
-		// 			Object.keys(e).forEach(key => {
-		// 				self.$set(self.defaultVal, key, e[key]);
-		// 			});
-		// 			this.photosData = e;
-		// 			this.getFieldsV2(condition);
-		// 		});
-		// 	});
-		// } else {
-		// 	uni.$on('sendDefaultVal', e => {
-		// 		Object.keys(e).forEach(key => {
-		// 			self.$set(self.defaultVal, key, e[key]);
-		// 		});
-		// 		this.photosData = e;
-		// 	});
-		// 	if (this.params.formDisabled == true) {
-		// 		this.formDisabled = true;
-		// 	}
-		// 	this.condition = this.params.condition;
-		// 	let cond = [];
-		// 	if (this.params.cond && Array.isArray(this.params.cond) && this.params.cond.length > 0) {
-		// 		cond = this.params.cond.forEach(item => {
-		// 			if (item.colName === 'openid' && item.value === 'user_no') {
-		// 				item.value = uni.getStorageSync('login_user_info').user_no;
-		// 			}
-		// 		});
-		// 		this.condition = cond;
-		// 	}
-		// 	this.getFieldsV2(condition);
-		// }
-	},
 	onLoad() {
 		uni.setStorageSync('activeApp', 'spocp');
 		this.serviceName = 'srvspocp_store_select';
-		// this.serviceName = 'srvspocp_merchant_user_reg';
 		this.type = 'add';
 		this.setBackUrl();
 		this.selectRealNameInfo().then(res => {
@@ -156,18 +112,6 @@ export default {
 				}
 			} else {
 				this.setBackUrl();
-				uni.showModal({
-					title: '提示',
-					content: '您未进行实名认证，点击确定按钮进行认证',
-					showCancel: false,
-					success(res) {
-						if (res.confirm) {
-							uni.redirectTo({
-								url: '/pages/specific/addInfo/addInfo'
-							});
-						}
-					}
-				});
 			}
 		});
 	},
@@ -177,71 +121,6 @@ export default {
 			// 重置表单
 			this.fields = null;
 			this.fields = this.deepClone(e);
-		},
-		toChildList(e) {
-			let data = this.deepClone(e);
-			let formData = this.defaultVal;
-			let condition = [{ colName: e.foreign_key.column_name, ruleType: 'eq', value: formData[e.foreign_key.referenced_column_name] }];
-			if (e.foreign_key && e.foreign_key.more_config && e.foreign_key.more_config.targetType && formData[e.foreign_key.referenced_column_name]) {
-				let targetType = e.foreign_key.more_config.targetType;
-				if (targetType === 'list') {
-					uni.navigateTo({
-						url: '/pages/list/list?serviceName=' + e.service_name + '&cond=' + JSON.stringify(condition)
-					});
-				} else if (targetType === 'detail') {
-					if (e.childData && e.childData.data && e.childData.data.length > 0) {
-						let params = {
-							type: 'update',
-							formDisabled: true,
-							condition: [
-								{
-									colName: 'id',
-									ruleType: 'in',
-									value: e.childData.data[0].id
-								}
-							],
-							serviceName: e.service_name
-							// "defaultVal": row
-						};
-						uni.navigateTo({
-							url: '/pages/formPage/formPage?params=' + JSON.stringify(params)
-						});
-					} else {
-						uni.showModal({
-							title: '提示',
-							content: '暂无数据，是否添加数据',
-							success(res) {
-								if (res.confirm) {
-									let params = {
-										type: 'add',
-										serviceName: e.service_name.replace('_select', '_add')
-										// defaultVal:formData
-									};
-									// referenced_column_name //被引用的字段
-									// column //子表字段
-									console.log(e);
-									if (e.foreign_key && e.foreign_key.referenced_column_name && e.foreign_key.column_name) {
-										params.defaultCondition = [
-											{
-												colName: e.foreign_key.referenced_column_name,
-												ruleType: 'eq',
-												value: formData[e.foreign_key.column_name]
-											}
-										];
-									}
-									uni.navigateTo({
-										url: '/pages/formPage/formPage?params=' + JSON.stringify(params)
-									});
-								}
-							}
-						});
-					}
-				}
-			} else {
-				uni.navigateTo({
-					url: '/pages/list/list?serviceName=' + e.service_name + '&cond=' + JSON.stringify(condition)
-				});
-			}
 		},
 		toPage(e) {
 			console.log(e);
@@ -257,28 +136,6 @@ export default {
 				this.formData = this.deepClone(e);
 			}
 		},
-		async selectList(item) {
-			let app = 'spocp';
-			let url = this.getServiceUrl(app, item.service_name, 'select');
-			let formData = this.defaultVal;
-			if (item.foreign_key && item.foreign_key.referenced_column_name && formData[item.foreign_key.referenced_column_name]) {
-				let req = {
-					serviceName: item.service_name,
-					colNames: ['*'],
-					condition: [{ colName: item.foreign_key.column_name, ruleType: 'eq', value: formData[item.foreign_key.referenced_column_name] }],
-					page: { pageNo: 1, rownumber: 5 },
-					order: []
-				};
-				let res = await this.$http.post(url, req);
-				if (res.data.state === 'SUCCESS') {
-					return { data: res.data.data, page: res.data.page };
-				} else {
-					return res.data.state;
-				}
-			} else {
-				return false;
-			}
-		},
 		getFieldsV2: async function(condition) {
 			let app = 'spocp';
 			let type = '';
@@ -291,29 +148,6 @@ export default {
 			}
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
-			}
-			if (colVs && colVs.child_service && Array.isArray(colVs.child_service) && colVs.child_service.length > 0) {
-				// 有子表
-				this.hasChildService = true;
-				this.childService = colVs.child_service;
-				this.childService.forEach((item, index) => {
-					this.selectList(item).then(res => {
-						item.childData = res;
-						if (res.data && res.data.length > 0) {
-							item.data = res.data[0];
-						}
-						if (item.foreign_key && item.foreign_key.more_config && typeof item.foreign_key.more_config === 'string') {
-							try {
-								item.foreign_key.more_config = JSON.parse(item.foreign_key.more_config);
-							} catch (e) {
-								//TODO handle the exception
-								console.log(e);
-							}
-						}
-						this.$set(this.childService, index, item);
-					});
-				});
-				this.childService.filter(item => item.childData);
 			}
 			if (!this.navigationBarTitle) {
 				uni.setNavigationBarTitle({
@@ -390,6 +224,9 @@ export default {
 							item.disabled = true;
 							item.value = uni.getStorageSync('login_user_info').user_no;
 						}
+						if (item.col_type === 'Image') {
+							// item.fileNum = 1;
+						}
 						if (item.column === 'merchant_name') {
 							item.type = 'treeSelector';
 							item.srvInfo = {
@@ -417,29 +254,10 @@ export default {
 					break;
 			}
 		},
-		async getDetailfieldModel() {
-			let params = this.deepClone(this.params);
-			let app = 'spocp';
-			params.serviceName = params.serviceName.replace('_update', '_select').replace('_add', '_select');
-			let url = this.getServiceUrl(app, params.serviceName, 'select');
-			const req = {
-				colNames: ['*'],
-				condition: params.condition,
-				page: { pageNo: 1, rownumber: 5 },
-				serviceName: params.serviceName
-			};
-			let res = await this.$http.post(url, req);
-			if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
-				// this.defaultVal = res.data.data[0];
-				return res.data.data[0];
-			} else {
-				return false;
-			}
-		},
 		async onButton(e) {
 			let data = this.$refs.bxForm.getFieldModel();
 			let req = this.deepClone(data);
-			let _this = this;
+			let self = this;
 			switch (e.button_type) {
 				case 'submit':
 					console.log('addServiceName:', e.service_name);
@@ -455,7 +273,6 @@ export default {
 						let url = this.getServiceUrl(app, serviceName, 'operate');
 						let res = await this.$http.post(url, req);
 						this.selectRealNameInfo();
-						console.log(url, res.data);
 						if (res.data.state === 'SUCCESS') {
 							uni.showModal({
 								title: '提示',
@@ -497,71 +314,26 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.sublist-content {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	margin: 50rpx 20rpx;
-	.sublist-box {
+.merchant-reg {
+	background-position: bottom;
+	background-size: 100%;
+	background-repeat: no-repeat;
+	.form-box {
 		width: 100%;
-		display: flex;
-		border: 1px dashed #efefef;
-		justify-content: space-between;
-		padding: 10rpx;
-		flex-wrap: wrap;
-		.child-service {
-			// width: 50%;
-			width: calc(50% - 20rpx);
-			height: 150rpx;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			border-radius: 10rpx;
-			margin: 10rpx;
-			text-align: center;
-			font-size: 12px;
-			button {
-				flex: 1;
-			}
-			.service {
-				height: 100%;
-				width: 100%;
-				border-radius: 10rpx;
-				display: flex;
-				flex-direction: column;
-				justify-content: flex-start;
-			}
-			.section_name {
-				font-size: 12px;
-				padding: 10rpx;
-				overflow: hidden;
-				white-space: nowrap;
-				text-overflow: ellipsis;
-				font-size: 12px;
-				display: flex;
-			}
-			.section_content {
-				font-weight: 700;
-				padding-top: 10px;
-				display: flex;
-				flex: 1;
-				justify-content: center;
-			}
-		}
 	}
-}
-.articles {
-	// background-color: #c4e5ff !important;
 	.cu-item {
 		opacity: 0;
 		margin: 0;
 		.button-box {
+			margin: 0 auto;
+			background-color: transparent;
+			border-radius: 0;
 			uni-view {
 				flex: 1;
 			}
 			/deep/ .cu-btn {
 				width: 300rpx;
+				background: linear-gradient(to right, rgb(54, 119, 238) 0%, rgba(54, 119, 238, 0.9) 70%, rgba(54, 119, 238, 0.7) 100%);
 			}
 		}
 		&.show {

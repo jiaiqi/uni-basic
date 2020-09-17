@@ -84,6 +84,11 @@
 			textIndent: {
 				type: String,
 				default: '2em'
+			},
+			// open和close事件时，将此参数返回在回调参数中
+			index: {
+				type: [Number, String],
+				default: ''
 			}
 		},
 		watch: {
@@ -128,6 +133,8 @@
 				this.showMore = !this.showMore;
 				// 如果toggle为false，隐藏"收起"部分的内容
 				if (this.toggle == false) this.isLongContent = false;
+				// 发出打开或者收齐的事件
+				this.$emit(this.showMore ? 'open' : 'close', this.index);
 			}
 		}
 	};
@@ -153,12 +160,12 @@
 			position: relative;
 			width: 100%;
 			padding-bottom: 26rpx;
-			display: flex;
+			@include vue-flex;
 			align-items: center;
 			justify-content: center;
 
 			&__readmore-btn {
-				display: flex;
+				@include vue-flex;
 				align-items: center;
 				justify-content: center;
 				line-height: 1;

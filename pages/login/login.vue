@@ -61,6 +61,7 @@ export default {
 				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
 				let backUrl = uni.getStorageSync('backUrl');
 				this.selectRealNameInfo().then(res => {
+					debugger
 					if (backUrl && backUrl !== '/' && backUrl !== '/ymt/') {
 						console.log('即将跳转到backUrl页面', backUrl);
 						if (backUrl.indexOf('/login/login') !== -1) {
@@ -68,8 +69,8 @@ export default {
 								url: this.$api.homePath,
 								fail(res) {
 									if (res.errMsg) {
-										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-											window.location.href = _this.$api.homePath;
+										if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
+											window.location.href = self.$api.homePath;
 										}
 									}
 								}
@@ -85,8 +86,8 @@ export default {
 							url: this.$api.homePath,
 							fail(res) {
 								if (res.errMsg) {
-									if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-										window.location.href = _this.$api.homePath;
+									if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
+										window.location.href = self.$api.homePath;
 									}
 								}
 							}
@@ -150,21 +151,21 @@ export default {
 			});
 		},
 		saveWxUser() {
-			let _this = this;
+			let self = this;
 			const url = this.getServiceUrl('wx', 'srvwx_app_login_verify', 'operate');
 			let req = [
 				{
 					data: [
 						{
-							code: _this.$route.query.code,
-							app_no: _this.$api.appNo.wxh5
+							code: self.$route.query.code,
+							app_no: self.$api.appNo.wxh5
 						}
 					],
 					serviceName: 'srvwx_app_login_verify'
 				}
 			];
 			console.log('saveWxUser请求参数:', req);
-			_this.$http.post(url, req).then(response => {
+			self.$http.post(url, req).then(response => {
 				if (response.data.resultCode === 'SUCCESS' && response.data.response[0].response) {
 					console.log('授权成功', response);
 					let resData = response.data.response[0].response;
@@ -191,21 +192,21 @@ export default {
 					}
 					// 获取回调前记录的url 并再回调后 再次进入该url，没有该url时 进入 home
 					let backUrl = uni.getStorageSync('backUrl');
-					console.log('_this.backUrl', '===', backUrl);
-					_this.selectRealNameInfo().then(result => {
+					console.log('self.backUrl', '===', backUrl);
+					self.selectRealNameInfo().then(result => {
 						if (backUrl && backUrl !== '/') {
-							backUrl = _this.getDecodeUrl(backUrl);
+							backUrl = self.getDecodeUrl(backUrl);
 							if (backUrl && backUrl.lastIndexOf('backUrl=') !== -1) {
 								backUrl = backUrl.substring(backUrl.lastIndexOf('backUrl=') + 8, backUrl.length);
 								console.log('授权成功，准备返回用户界面backUrl', backUrl);
 							}
 							if (backUrl.indexOf('/login/login') !== -1) {
 								uni.reLaunch({
-									url: _this.$api.homePath,
+									url: self.$api.homePath,
 									fail(res) {
 										if (res.errMsg) {
-											if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-												window.location.href = _this.$api.homePath;
+											if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
+												window.location.href = self.$api.homePath;
 											}
 										}
 									}
@@ -217,11 +218,11 @@ export default {
 							}
 						} else {
 							uni.reLaunch({
-								url: _this.$api.homePath,
+								url: self.$api.homePath,
 								fail(res) {
 									if (res.errMsg) {
-										if (res.errMsg.indexOf('is not fond') !== -1 || _this.$api.homePath.indexOf('http') !== -1) {
-											window.location.href = _this.$api.homePath;
+										if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
+											window.location.href = self.$api.homePath;
 										}
 									}
 								}
@@ -250,7 +251,7 @@ export default {
 		},
 		async accountLogin(user) {
 			// 账号登录
-			let _this = this;
+			let self = this;
 			uni.hideKeyboard(); //隐藏软键盘
 			console.log('srvuser_login', user);
 			if (Object.values(user).length < 2) {
@@ -293,48 +294,48 @@ export default {
 					});
 				} else {
 					uni.navigateTo({
-						url: _this.$api.homePath
+						url: self.$api.homePath
 					});
 					// uni.reLaunch({
-					// 	url: _this.$api.homePath
+					// 	url: self.$api.homePath
 					// });
 				}
 			}
 		},
 		wechatLogin() {
 			// 进行微信登录流程并尝试获取微信的userInfo
-			let _this = this;
+			let self = this;
 			uni.checkSession({
 				success(res) {
 					// session_key 未过期，并且在本生命周期一直有效
 					console.log('uni.checkSession', res);
 					let isLogin = uni.getStorageSync('isLogin');
 					if (!isLogin) {
-						_this.uniLogin();
+						self.uniLogin();
 					}
 				},
 				fail(res) {
 					// session_key 已经失效，需要重新执行登录流程
 					console.log('uni.checkSession-fail', res);
-					_this.uniLogin();
+					self.uniLogin();
 				}
 			});
 		},
 		uniLogin() {
 			// 微信登录
-			let _this = this;
+			let self = this;
 			uni.login({
 				provider: 'weixin',
 				success: function(loginRes) {
 					console.log(loginRes);
-					_this.verifyLogin(loginRes.code).then(res => {
+					self.verifyLogin(loginRes.code).then(res => {
 						console.log(res, 'login-res');
 						uni.showToast({
 							title: '登录成功',
 							icon: 'success'
 						});
 						uni.navigateBack();
-						_this.getUserInfo();
+						self.getUserInfo();
 					});
 				}
 			});

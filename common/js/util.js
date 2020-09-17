@@ -4,9 +4,11 @@ import {
 } from 'common/js/config.js'
 import fly from '@/common/js/http.js' // fly 请求拦截
 import Loading from '@/components/bx-loading/index.js'
+import Dialog from '@/components/bx-dialog/index.js'
 const install = (Vue, options) => {
 	Vue.use(Loading.directive)
 	Vue.prototype.$loading = Loading.service
+	Vue.prototype.$dialog = Dialog.service
 	Vue.prototype.$http = fly
 	Vue.prototype.$api = { ...config,
 		...api
@@ -552,6 +554,41 @@ const install = (Vue, options) => {
 			}
 		}
 	}
+	/*
+	 * 时间转换
+	 * 
+	 **/
+	Vue.prototype.formateDate = function(date, type = 'date') {
+		console.log(date)
+		date = new Date(date)
+		let o = {
+			'yy': date.getFullYear(),
+			'MM': (() => {
+				let MM = date.getMonth() + 1
+				if (MM < 10) {
+					MM = '0' + MM
+				}
+				return MM
+			})(),
+			'dd': date.getDate() < 10 ? '0' + date.getDate() : date.getDate(),
+			'HH': date.getHours(),
+			'mm': (() => {
+				let mm = date.getMinutes()
+				if (mm < 10) {
+					mm = '0' + mm
+				}
+				return mm
+			})(),
+			'ss': date.getSeconds()
+		};
+		if (type === 'date') {
+			return o.yy + '-' + o.MM + '-' + o.dd + ' '
+		} else if (type === 'dateTime') {
+			return o.HH + ':' + o.mm
+		} else {
+			return o.yy + '-' + o.MM + '-' + o.dd + ' ' + o.HH + ':' + o.mm + ':' + o.ss;
+		}
+	}
 	/**
 	 * 按钮跳转的统一处理
 	 * 
@@ -1075,13 +1112,18 @@ const install = (Vue, options) => {
 					data: res.data.data[0],
 					user: res.data.data[0]
 				}
-
-				let merchantInfo = await Vue.prototype.selectMerchantInfo()
-				if (merchantInfo) {
-					realNameInfo.merchant = merchantInfo
-					realNameInfo._merchant_user = merchantInfo
-				} else if (res.data._merchant_user && Object.keys(res.data._merchant_user).length > 0) {
+				// let merchantInfo = await Vue.prototype.selectMerchantInfo()
+				// if (merchantInfo) {
+				// 	realNameInfo.merchant = merchantInfo
+				// 	realNameInfo._merchant_user = merchantInfo
+				// } else 
+				if (res.data._merchant_user && Object.keys(res.data._merchant_user).length > 0) {
+					realNameInfo.merchant = res.data._merchant_user
 					realNameInfo.employeeInfo = res.data._merchant_user
+					realNameInfo._merchant_user = res.data._merchant_user
+				}
+				if (res.data._store_user && Object.keys(res.data._store_user).length > 0) {
+					realNameInfo._store_user = res.data._store_user
 				}
 				uni.setStorageSync('realNameInfo', realNameInfo);
 				console.log('用户信息:', realNameInfo);
@@ -1105,19 +1147,8 @@ const install = (Vue, options) => {
 							// 不显示下面弹框
 							return
 						}
+						Vue.prototype.currentDialog = Vue.prototype.$dialog({});
 						uni.setStorageSync('backUrl', backUrl)
-						uni.showModal({
-							title: '提示',
-							content: '您未进行实名认证，点击确定按钮进行认证',
-							showCancel: false,
-							success(res) {
-								if (res.confirm) {
-									uni.redirectTo({
-										url: '/pages/specific/addInfo/addInfo'
-									});
-								}
-							}
-						});
 					}
 				}
 

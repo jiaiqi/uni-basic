@@ -1,6 +1,6 @@
 <template>
 	<view class="qrcode-detail-wrap">
-		<u-navbar title="优惠券详情" :is-back="false" :title-color="color" :background="background"></u-navbar>
+		<!-- <u-navbar title="优惠券详情" :is-back="false" :title-color="color" :background="background"></u-navbar> -->
 		<view class="cu-list menu qr-code-main" :class="[menuBorder ? 'sm-border' : '']">
 			<view class="cu-item" :class="menuArrow ? 'arrow' : ''">
 				<view class="content">
@@ -37,7 +37,7 @@
 					<text class="text-grey">{{ couponInfo.used_end_time }}</text>
 				</view>
 			</view>
-			<view v-if="couponInfo.coupon_type === '代金券'" class="cu-item" :class="menuArrow ? 'arrow' : ''">
+			<view v-if="couponInfo.coupon_type === '代金券'||couponInfo.coupon_type === '折扣券'" class="cu-item" :class="menuArrow ? 'arrow' : ''">
 				<view class="content">
 					<text class="cuIcon-circlefill text-grey"></text>
 					<text class="text-grey">优惠券使用条件：</text>
@@ -98,6 +98,11 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS') {
 				let couponInfo = res.data.response[0].response.couponReceive;
+				// if (couponInfo.coupon_type === '代金券' || couponInfo.coupon_type === '折扣券') {
+				// 	// consume_amount 消费金额
+					
+				// }
+				// debugger;
 				this.couponInfo = couponInfo;
 			}
 		},
@@ -116,7 +121,8 @@ export default {
 						{
 							colName: 'store_no',
 							ruleType: 'eq',
-							value: uni.getStorageSync('realNameInfo').merchant ? uni.getStorageSync('realNameInfo').merchant.store_no:uni.getStorageSync('realNameInfo').employeeInfo.store_no
+							value: uni.getStorageSync('current__info').store_no
+							// value: uni.getStorageSync('realNameInfo').user._store_user[0].store_no
 						}
 					]
 				}
@@ -125,22 +131,23 @@ export default {
 			if (res.data.state === 'SUCCESS') {
 				console.log('优惠券使用成功', res.data);
 				uni.showModal({
-					title: '操作成功,即将返回商户首页',
+					title: '操作成功',
 					showCancel: false,
 					success(res) {
 						if (res.confirm) {
-							uni.reLaunch({
-								url: '/pages/specific/merchant/merchant'
-								// url: this.$api.homePath
-							});
+							uni.navigateBack({});
+							// uni.reLaunch({
+							// 	url: '/pages/specific/merchant/merchant'
+							// 	// url: this.$api.homePath
+							// });
 						}
 					}
 				});
-			}else{				
+			} else {
 				uni.showToast({
-					title:res.data.resultMessage,
-					icon:'none'
-				})
+					title: res.data.resultMessage,
+					icon: 'none'
+				});
 			}
 		}
 	},
@@ -163,7 +170,8 @@ export default {
 	margin-top: 2rem;
 }
 .qr-confirm {
-	background-color: #ec625c;
+	background: linear-gradient(to right, #3677ee 0%, rgba(54, 119, 238, 0.9) 70%, rgba(54, 119, 238, 0.7) 100%);
 	width: 80%;
+	border-radius: 50upx;
 }
 </style>

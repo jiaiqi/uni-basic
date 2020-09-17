@@ -390,7 +390,8 @@ export default {
 			if (this.formDisabled) {
 				type = 'detail';
 			}
-			let colVs = await this.getServiceV2(this.serviceName, type ? type : this.type, type ? type : this.type, app);
+			// srvspocp_user_real_name_auth
+			let colVs = await this.getServiceV2(this.serviceName, 'auth', type ? type : this.type, app);
 			if (this.formDisabled) {
 				colVs._fieldInfo.forEach(item => (item.disabled = true));
 			}

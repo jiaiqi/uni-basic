@@ -2,7 +2,8 @@
 	<view :style="[customStyle]" class="u-icon" @tap="click" :class="['u-icon--' + labelPos]">
 		<image class="u-icon__img" v-if="isImg" :src="name" :mode="imgMode" :style="[imgStyle]"></image>
 		<text v-else class="u-icon__icon" :class="customClass" :style="[iconStyle]" :hover-class="hoverClass" @touchstart="touchstart"></text>
-		<text v-if="label" class="u-icon__label" :style="{
+		<!-- 这里进行空字符串判断，如果仅仅是v-if="label"，可能会出现传递0的时候，结果也无法显示 -->
+		<text v-if="label !== ''" class="u-icon__label" :style="{
 			color: labelColor,
 			fontSize: $u.addUnit(labelSize),
 			marginLeft: labelPos == 'right' ? $u.addUnit(marginLeft) : 0,
@@ -80,7 +81,7 @@ export default {
 		},
 		// 图标右边或者下面的文字
 		label: {
-			type: String,
+			type: [String, Number],
 			default: ''
 		},
 		// label的位置，只能右边或者下边
@@ -143,7 +144,7 @@ export default {
 		// 用于解决某些情况下，让图标垂直居中的用途
 		top: {
 			type: [String, Number],
-			default: ''
+			default: 0
 		}
 	},
 	computed: {
@@ -167,8 +168,8 @@ export default {
 			style = {
 				fontSize: this.size == 'inherit' ? 'inherit' : this.$u.addUnit(this.size),
 				fontWeight: this.bold ? 'bold' : 'normal',
-				// 安卓和iOS各需要设置一个到顶部的距离，才能更好的垂直居中
-				top: this.top === '' ? (this.$u.os == 'ios' ? '2rpx' : '4rpx') : this.$u.addUnit(this.top)
+				// 某些特殊情况需要设置一个到顶部的距离，才能更好的垂直居中
+				top: this.$u.addUnit(this.top)
 			};
 			// 非主题色值时，才当作颜色值
 			if (this.color && !this.$u.config.type.includes(this.color)) style.color = this.color;
@@ -199,10 +200,16 @@ export default {
 
 <style scoped lang="scss">
 @import "../../libs/css/style.components.scss";
+/* #ifndef APP-NVUE */
+// 目前由于nvue对定义字体时的content属性报错，所以nvue先不引入
 @import '../../iconfont.css';
+/* #endif */
 
 .u-icon {
+	/* #ifndef APP-NVUE */
 	display: inline-flex;
+	/* #endif */
+	flex-direction: row;
 	align-items: center;
 
 	&--left {
@@ -250,8 +257,10 @@ export default {
 	}
 
 	&__img {
+		/* #ifndef APP-PLUS */
 		height: auto;
 		will-change: transform;
+		/* #endif */
 	}
 
 	&__label {

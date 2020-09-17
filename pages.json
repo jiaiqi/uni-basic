@@ -71,11 +71,12 @@
 		},
 		{
 			"path": "pages/specific/couponUsage/couponUsage",
-			"style": {
-			}
+			"style": {}
 		}, {
 			"path": "pages/specific/qrcodeDetail/qrcodeDetail",
-			"style": {}
+			"style": {
+				"navigationBarTitleText": "优惠券使用"
+			}
 		}, {
 			"path": "pages/specific/qrCode/qrCode",
 			"style": {
@@ -104,13 +105,51 @@
 			"style": {
 				"navigationBarTitleText": "商家详情"
 			}
+		},
+		{
+			"path": "pages/specific/spotSubscribe/spotSubscribe",
+			"style": {
+				"navigationBarTitleText": "预约信息"
+			}
+		},
+		// {
+		// 	"path": "pages/specific/merchantListNew/merchantListNew",
+		// 	"style": {
+		// 	}
+		// },
+		{
+			"path": "pages/specific/businessInfo/businessInfo",
+			"style": {
+				"navigationBarTitleText": "商户详情"
+			}
+		},
+		{
+			"path": "pages/specific/staffList/staffList",
+			"style": {
+
+			}
+		},
+		{
+			"path": "pages/specific/principalFRom/principalFRom",
+			"style": {
+				"navigationBarTitleText": "信息添加"
+			}
+		},
+		{
+			"path": "pages/specific/BusinessInfoAmend/BusinessInfoAmend",
+			"style": {
+				"navigationBarTitleText": "商户信息编辑"
+			}
 		}
-	],
+	    ,{
+            "path" : "pages/specific/navigateTo/navigateTo",
+            "style" : {}
+        }
+    ],
 	"globalStyle": {
 		"navigationStyle": "custom",
 		"navigationBarTextStyle": "white",
-		// "navigationBarTitleText": "uni-basic",
-		"navigationBarBackgroundColor": "#DA3D3E",
+		"navigationBarBackgroundColor": "#3677fe",
 		"backgroundColor": "#F8F8F8"
 	},
 	"easycom": {

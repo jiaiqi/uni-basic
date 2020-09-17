@@ -3,7 +3,7 @@
 		<view class="imageUploadList">
 			<view class="imageItem" v-bind:key="index" v-for="(path,index) in imageListData">
 				<image :src="path" :class="{'dragging':isDragging(index)}" draggable="true" @tap="previewImage" :data-index="index" @touchstart="start" @touchmove.stop.prevent="move" @touchend="stop"></image>
-				<view v-if="isShowDel" class="imageDel" @tap="deleteImage" :data-index="index">x</view>
+				<view v-if="isShowDel" class="imageDel" @tap="deleteImage($event,index)" :data-index="index">x</view>
 			</view>
 			<view v-if="isShowAdd&&!settings||(settings&&settings.eventType!=='navTo')" class="imageUpload" @tap="selectImage">+</view>
 			<view v-if="isShowAdd&&settings&&settings.eventType==='navTo'" class="imageUpload" @tap="toPage">+</view>
@@ -72,7 +72,6 @@
 				if(this.enableAdd === false){
 					return false
 				}
-				
 				if(this.limit && this.imageList.length >= this.limit){
 					return false
 				}
@@ -217,22 +216,24 @@
 					}
 				})
 			},
-			deleteImage: function(e){
+			deleteImage: function(e,index){
 				let _self = this
 				var imageIndex = e.currentTarget.dataset.index
+				imageIndex = index
 				var deletedImagePath = _self.imageListData[imageIndex]
 				_self.imageListData.splice(imageIndex, 1) 
-				
+				// _self.imageList.splice(imageIndex,1)
 				//检查删除图片的服务器地址是否设置，如果设置则调用API，在服务器端删除该图片
 				// console.log(imageIndex,_self.imageListData,deletedImagePath)
 				let fileUrl = deletedImagePath.substring(deletedImagePath.lastIndexOf('filePath=') + 9,deletedImagePath.length)
 				if(fileUrl.lastIndexOf('&thumbnailType=fwsu_100') !== -1){
 					fileUrl = fileUrl.substring(0,fileUrl.lastIndexOf('&thumbnailType=fwsu_100'))
 				}
+				if(fileUrl.lastIndexOf('&bx_auth_ticket=')!==-1){
+					fileUrl = fileUrl.substring(0,fileUrl.lastIndexOf('&bx_auth_ticket='))
+				}
 				if(_self.serverUrlDeleteImage){
 					uni.request({
-						// fileurl: "/20200215/20200212131045939100/20200215221516207100.jpg"
-						// http://srvms.100xsys.cn:80/file/download?filePath=/20200212/20200212131045939100/20200212131045939101.jpg
 						url: _self.serverUrlDeleteImage,
 						method: 'POST',
 						header:_self.header,
@@ -244,7 +245,6 @@
 						}
 					});
 				}
-				
 				this.$emit('delete',{
 					currentImage: deletedImagePath,
 					allImages: this.imageList

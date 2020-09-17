@@ -6,7 +6,7 @@
 			class="u-avatar__img"
 			v-if="!uText && avatar"
 			:src="avatar" 
-			:mode="mode"
+			:mode="imgMode"
 		></image>
 		<text class="u-line-1" v-else-if="uText" :style="{
 			fontSize: '38rpx'
@@ -122,7 +122,13 @@
         watch: {
             src(n) {
                 // 用户可能会在头像加载失败时，再次修改头像值，所以需要重新赋值
-                this.avatar = n;
+                if(!n) {
+					// 如果传入null或者''，或者undefined，显示默认头像
+					this.error = true;
+				} else {
+					this.avatar = n;
+					this.error = false;
+				}
             }
         },
 		computed: {
@@ -176,7 +182,9 @@
 	@import "../../libs/css/style.components.scss";
 
 	.u-avatar {
-		display: inline-flex;
+		/* #ifndef APP-NVUE */
+		display: inline-flex;		
+		/* #endif */
 		align-items: center;
 		justify-content: center;
 		font-size: 28rpx;
@@ -194,7 +202,7 @@
 			width: 32rpx;
 			color: #ffffff;
 			height: 32rpx;
-			display: flex;
+			@include vue-flex;
 			justify-content: center;
 			align-items: center;
 			border-radius: 100rpx;
@@ -221,7 +229,7 @@
 			width: 32rpx;
 			color: #ffffff;
 			height: 32rpx;
-			display: flex;
+			@include vue-flex;
 			justify-content: center;
 			align-items: center;
 			border-radius: 100rpx;

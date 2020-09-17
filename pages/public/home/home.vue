@@ -129,7 +129,7 @@ export default {
 			}
 		},
 		async getWebsiteList() {
-			const _this = this;
+			const self = this;
 			let siteIndex = this.siteIndex;
 			const url = this.getServiceUrl('daq', 'srvdaq_website_page_select', 'select');
 			let website_no = this.website_no;
@@ -146,7 +146,7 @@ export default {
 						}
 					]
 				};
-				const res = await _this.$http.post(url, req);
+				const res = await self.$http.post(url, req);
 				if (res.data.state === 'SUCCESS' && res.data.data.length > 0) {
 					res.data.data.length > 5 ? (res.data.data.length = 5) : '';
 					res.data.data.forEach((it, i) => {
@@ -155,10 +155,10 @@ export default {
 							it['checked'] = true;
 						}
 					});
-					_this.websiteList = res.data.data;
-					_this.currentPage = res.data.data[siteIndex];
-					if (_this.$refs.sitePage) {
-						_this.$refs.sitePage.getPageInfo(_this.currentPage.website_no, _this.currentPage.page_no);
+					self.websiteList = res.data.data;
+					self.currentPage = res.data.data[siteIndex];
+					if (self.$refs.sitePage) {
+						self.$refs.sitePage.getPageInfo(self.currentPage.website_no, self.currentPage.page_no);
 					}
 				}
 			}

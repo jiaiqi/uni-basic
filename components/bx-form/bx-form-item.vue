@@ -98,7 +98,7 @@
 				<view v-else-if="fieldData.type === 'images'">
 					<robby-image-upload
 						:value="imagesUrl"
-						:enable-del="false"
+						:enable-del="true"
 						:enable-add="fieldData.disabled ? !fieldData.disabled : true"
 						:server-url="upLoadUrl"
 						@delete="deleteImage"
@@ -811,6 +811,7 @@ export default {
 		},
 		deleteImage(e) {
 			console.log(e);
+			// this.imagesUrl = e.allImages
 		},
 		onTreeSelector(e) {
 			this.fieldData.value = e;
