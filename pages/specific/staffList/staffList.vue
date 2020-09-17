@@ -1,6 +1,7 @@
 <template>
 	<view class="wrap0">
 		<view class="list-wrap" v-if="staffData.listData && staffData.listData.length > 0">
+
 			<view class="card_box" v-for="(item, index) in staffData.listData" :key="index">
 				<view class="lefts">
 					<view class="">{{ staffData.lableInfo.labelOne }}：{{ item[staffData.lableInfo.labelOneKey] }}</view>

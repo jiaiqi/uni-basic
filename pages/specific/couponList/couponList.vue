@@ -21,9 +21,10 @@
 					</view>
 				</scroll-view>
 			</view>
-			<view class="search-bar"><u-search placeholder="输入商户名称进行搜索" @clear="onClear" :show-action="true" :animation="true" v-model="keyword" @custom="onSearch"></u-search></view>
-			<u-dropdown ref="uDropdown" @open="openDrop" @close="closeDrop">
-				<u-dropdown-item @change="changeDrop" v-model="dropValue" title="优惠券类型" :options="subsectionList"></u-dropdown-item>
+			<view class="search-bar">
+				<u-search placeholder="输入商户名称进行搜索" @clear="onClear" :show-action="true" :animation="true" v-model="keyword" @custom="onSearch"></u-search></view>
+			<u-dropdown ref="uDropdown" :class="{'dropClose':dropClose}" @open="openDrop" @close="closeDrop">
+				<u-dropdown-item  @change="changeDrop" v-model="dropValue" title="优惠券类型" :options="subsectionList"></u-dropdown-item>
 			</u-dropdown>
 			<!-- 	<view class="subsection" @click="clickSub">
 				<u-subsection :list="subsectionList" :current="currentSub" @change="changeSub"></u-subsection>
@@ -150,6 +151,7 @@ export default {
 			dropOption: [],
 			dropValue: '',
 			dropModel: '',
+			dropClose:true,
 			subsectionList: [
 				{
 					name: '现金券',
@@ -281,12 +283,14 @@ export default {
 			// 同时内部会自动给当前展开项进行高亮
 			// console.log(index)
 			this.$refs.uDropdown.highlight();
+			this.dropClose = false
 		},
 		closeDrop(index) {
 			// 关闭的时候，给当前项加上高亮
 			// 当然，您也可以通过监听dropdown-item的@change事件进行处理
 			this.$refs.uDropdown.highlight(index);
 			console.log(index);
+			this.dropClose = true
 		},
 		changeDrop(e) {
 			console.log(e);
@@ -733,6 +737,11 @@ export default {
 };
 </script>
 <style lang="scss">
+.dropClose{
+	/deep/.u-dropdown__content{
+		height: 0;
+	}
+}
 /deep/.u-dropdown__content {
 	height: auto;
 	background-color: #fff;

@@ -116,6 +116,9 @@
 				</view>
 			</view>
 		</view>
+		<view class="search-bar" v-if="presentPage==='record'">
+			<u-search placeholder="输入使用时间进行搜索" @clear="onClear" :show-action="true" :animation="true" v-model="keyword" @custom="onSearch"></u-search>
+		</view>
 		<sPullScroll
 			ref="pullScroll"
 			:heightStyle="heightStyle"
@@ -123,7 +126,7 @@
 			:pullUp="loadData"
 			:enablePullDown="true"
 			:enablePullUp="true"
-			:top="130"
+			:top="presentPage==='record'?200:130"
 			:fixed="true"
 			:bottom="0"
 			finishText="我是有底线的..."
@@ -159,6 +162,8 @@ export default {
 	components: { staffList, businessInfo, sPullScroll },
 	data() {
 		return {
+			keyword:"",//搜索关键词
+			
 			shopMsgList: [],
 			heightStyle: 'calc(100vh-200upx)',
 			isRedict: false,
@@ -252,6 +257,15 @@ export default {
 		}
 	},
 	methods: {
+		onClear(){
+			this.onRefresh();
+		},
+		onSearch(e) {
+			if (e) {
+				console.log(this.keyword);
+				this.onRefresh();
+			}
+		},
 		changeUser(e) {
 			this.currentIdentity = e.type;
 			if (e.type === 'merchant') {
@@ -569,6 +583,13 @@ export default {
 					pageNo: this.pageInfo.pageNo
 				}
 			};
+			if(this.keyword){
+				req.condition = req.condition.concat({
+					colName: 'confirm_time',
+					ruleType: 'like',
+					value: this.keyword
+				});
+			}
 			let res = await this.$http.post(url, req);
 			// if(res.data.data.length > 0){
 			self.pageInfo.total = res.data.page.total;
@@ -628,7 +649,6 @@ export default {
 					}
 					this.staffData = {};
 					this.onRefresh();
-
 					break;
 				case 'merchant':
 					let user3 = uni.getStorageSync('current__info');
@@ -1235,12 +1255,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+	.search-bar{
+		background-color: #fff;
+		padding:  10px;
+	}
 .merch-wrap {
 	background-color: #f2f5fa;
 	min-height: 100vh;
 	.merchants {
 		.placeholder {
-			height: 110upx;
+			height: 90upx;
 		}
 	}
 }
