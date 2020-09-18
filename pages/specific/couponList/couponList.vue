@@ -1,15 +1,5 @@
 <template>
 	<view class="coupon-list-wrap">
-		<!-- <u-navbar title="优惠券列表" :back-icon-color="backIcon" :is-back="false" :back-text-style="backText" :title-color="color" :background="background"></u-navbar> -->
-		<!-- <view class="coupon-list-tab">
-			<scroll-view scroll-x class="bg-white nav" scroll-with-animation :scroll-left="scrollLeft">
-				<view class="flex text-center">
-					<view class="cu-item flex-sub coupon-title" :class="index == TabCur ? 'cur' : ''" v-for="(item, index) in tabData" :key="index" @tap="tabSelect" :data-id="index">
-						<text>{{ item.label }}</text>
-					</view>
-				</view>
-			</scroll-view>
-		</view> -->
 		<view class="contentbox">
 			<view v-if="tabData.length > 0" class="coupon-list-tab">
 				<scroll-view scroll-x class="bg-white nav">
@@ -17,18 +7,26 @@
 						<view class="cu-item flex-sub coupon-title" v-for="(item, index) in tabData" :key="index" @tap="tabSelect(item, index)">
 							<text v-if="index == TabCur" class="line"></text>
 							<text>{{ item.label }}</text>
+							<!-- <text>{{ item.num }}</text> -->
 						</view>
 					</view>
 				</scroll-view>
 			</view>
 			<view class="search-bar">
-				<u-search placeholder="输入商户名称进行搜索" @clear="onClear" :show-action="true" :animation="true" v-model="keyword" @custom="onSearch"></u-search></view>
-			<u-dropdown ref="uDropdown" :class="{'dropClose':dropClose}" @open="openDrop" @close="closeDrop">
-				<u-dropdown-item  @change="changeDrop" v-model="dropValue" title="优惠券类型" :options="subsectionList"></u-dropdown-item>
-			</u-dropdown>
-			<!-- 	<view class="subsection" @click="clickSub">
-				<u-subsection :list="subsectionList" :current="currentSub" @change="changeSub"></u-subsection>
-			</view> -->
+				<u-search
+					placeholder="输入商场名称进行搜索"
+					@clear="onClear"
+					:action-style="actionStyle"
+					:show-action="true"
+					:animation="true"
+					v-model="keyword"
+					@search="onSearch"
+					@custom="onSearch"
+				></u-search>
+				<u-dropdown ref="uDropdown" :class="{ dropClose: dropClose }" @open="openDrop" @close="closeDrop" :active-color="activeColor">
+					<u-dropdown-item @change="changeDrop" v-model="dropValue" :title="dropDownTitle" :options="subsectionList"></u-dropdown-item>
+				</u-dropdown>
+			</view>
 		</view>
 		<sPullScroll
 			ref="pullScroll"
@@ -37,7 +35,7 @@
 			:pullUp="loadData"
 			:enablePullDown="true"
 			:enablePullUp="true"
-			:top="230"
+			:top="180"
 			:fixed="true"
 			:bottom="0"
 			finishText="我是有底线的..."
@@ -45,7 +43,10 @@
 			<view class="coupon-list-main">
 				<view class="row">
 					<view v-for="(item, index) in couponValidList" :key="index" class="receive_coupon">
-						<view class="row_coupon_top" :class="TabCur == 2 ? 'efficacy-top' : ''">
+						<view
+							class="row_coupon_top"
+							:class="{ 'efficacy-top': TabCur === 2, djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
+						>
 							<view class="row_coupon_top_t">{{ item.coupon_name }}</view>
 							<view class="row_coupon_top_b">
 								<view class="row_coupon_top_b_left">
@@ -79,11 +80,28 @@
 						<view class="row_coupon_bot" :class="TabCur == 1 ? 'sel-qrcode' : ''">
 							<view class="row_coupon_bot_left">
 								<view class="row_coupon_bot_l">
+									<view class="coupon_type" :class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }">
+										{{ item.coupon_type }}
+									</view>
 									<text>有效期至：</text>
 									<text>{{ item.used_end_time.split(' ')[0] }}</text>
 								</view>
-								<view @click="drawCoupon(item)" v-if="TabCur == 0" class="row_coupon_bot_r">立即领取</view>
-								<view @click="checkQrcode(item)" v-else-if="TabCur == 1" class="row_coupon_bot_r">查看二维码</view>
+								<view
+									@click="drawCoupon(item)"
+									v-if="TabCur == 0"
+									class="row_coupon_bot_r"
+									:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
+								>
+									立即领取
+								</view>
+								<view
+									@click="checkQrcode(item)"
+									v-else-if="TabCur == 1"
+									class="row_coupon_bot_r"
+									:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
+								>
+									查看二维码
+								</view>
 								<view v-else-if="TabCur == 2" class="row_coupon_bot_r efficacy">已使用</view>
 							</view>
 
@@ -143,15 +161,38 @@ import uQRCode from '@/common/uqrcode.js';
 export default {
 	name: 'couponList',
 	components: { sPullScroll },
+	computed: {
+		activeColor() {
+			let color = '#2979ff';
+			switch (this.dropValue) {
+				case '现金券':
+					color = '#fb5c51';
+					break;
+				case '代金券':
+					color = '#4a8ce6';
+					break;
+				case '折扣券':
+					color = '#f9c816';
+					break;
+			}
+			return color;
+		}
+	},
 	data() {
 		return {
 			keyword: '', //搜索关键词
+			dropDownTitle: '全部',
+			actionStyle: {
+				// backgroundColor:'#2979ff',
+				// borderRadius:"5px",
+				// color:'#fff'
+			},
 			currentSub: 3,
 			subChanged: false,
 			dropOption: [],
 			dropValue: '',
 			dropModel: '',
-			dropClose:true,
+			dropClose: true,
 			subsectionList: [
 				{
 					name: '现金券',
@@ -266,10 +307,10 @@ export default {
 		}
 	},
 	onShow() {
-		this.getCouponListNum();
+		// this.getCouponListNum();
 	},
 	methods: {
-		onClear(){
+		onClear() {
 			this.onRefresh();
 		},
 		onSearch(e) {
@@ -283,23 +324,25 @@ export default {
 			// 同时内部会自动给当前展开项进行高亮
 			// console.log(index)
 			this.$refs.uDropdown.highlight();
-			this.dropClose = false
+			this.dropClose = false;
 		},
 		closeDrop(index) {
 			// 关闭的时候，给当前项加上高亮
 			// 当然，您也可以通过监听dropdown-item的@change事件进行处理
 			this.$refs.uDropdown.highlight(index);
 			console.log(index);
-			this.dropClose = true
+			this.dropClose = true;
 		},
 		changeDrop(e) {
 			console.log(e);
 			// 更多的细节，如有需要请自行根据业务逻辑进行处理
 			// this.$refs.uDropdown.highlight(xxx);
+			this.dropDownTitle = this.dropValue;
 			if (e === this.dropModel) {
 				this.dropValue = null;
+				this.dropDownTitle = '全部';
 			}
-			this.dropModel = e;
+			this.dropModel = this.dropValue;
 			// if (this.dropValue) {
 			// 根据dropValue筛选优惠券类型
 			this.onRefresh();
@@ -516,7 +559,7 @@ export default {
 					value: this.keyword
 				});
 			}
-			if (this.keyword && (serviceName === 'srvspocp_coupon_config_receive_select'||serviceName==='srvspocp_coupon_receive_record_select')) {
+			if (this.keyword && (serviceName === 'srvspocp_coupon_config_receive_select' || serviceName === 'srvspocp_coupon_receive_record_select')) {
 				res.data.data = res.data.data.filter(item => {
 					if (item._merchant_no_disp.indexOf(this.keyword) !== -1) {
 						return item;
@@ -561,7 +604,10 @@ export default {
 					title: '领取成功',
 					duration: 2000
 				});
-				setTimeout(() => [this.onRefresh(), this.getCouponListNum()], 500);
+				setTimeout(() => {
+					this.onRefresh();
+					// this.getCouponListNum()
+				}, 500);
 			} else {
 				uni.showToast({
 					title: res.data.resultMessage,
@@ -653,7 +699,7 @@ export default {
 		tabSelect(e) {
 			this.TabCur = e.value;
 			this.dropValue = null;
-			this.keyword = null
+			this.keyword = null;
 			// this.scrollLeft = (e.currentTarget.dataset.id - 1) * 60;
 			this.couponValidList = [];
 			let serviceName = '';
@@ -737,15 +783,6 @@ export default {
 };
 </script>
 <style lang="scss">
-.dropClose{
-	/deep/.u-dropdown__content{
-		height: 0;
-	}
-}
-/deep/.u-dropdown__content {
-	height: auto;
-	background-color: #fff;
-}
 .contentbox {
 	background-color: #f2f5fa !important;
 	position: fixed;
@@ -753,8 +790,28 @@ export default {
 	top: 0;
 	z-index: 100;
 	.search-bar {
-		padding: 10rpx 50rpx;
+		padding: 10rpx 10rpx;
 		background-color: #fff;
+		display: flex;
+		justify-content: space-between;
+		.u-search {
+			flex: 2;
+		}
+		.u-dropdown {
+			flex: 0.5;
+		}
+		/deep/.u-dropdown__menu {
+			// width: 100rpx;
+		}
+		.dropClose {
+			/deep/.u-dropdown__content {
+				height: 0;
+			}
+		}
+		/deep/.u-dropdown__content {
+			height: auto;
+			background-color: #fff;
+		}
 	}
 }
 .coupon-list-tab {
@@ -815,10 +872,35 @@ export default {
 				.row_coupon_top {
 					color: white;
 					font-size: 28rpx;
-					background: linear-gradient(180deg, #4a8ce6, #3c64d4);
 					border-radius: 6px;
 					padding-bottom: 20rpx;
 					position: relative;
+					&.zkq {
+						// 折扣券
+						background-image: linear-gradient(180deg, #f9c816, #f8b500);
+						.coupon_flag {
+							background-image: -webkit-linear-gradient(30deg, #fff, transparent);
+							color: #e6a100 !important;
+							.coupon_flag_tri {
+								border-left: 12px solid #f9c512 !important;
+							}
+						}
+					}
+					&.xjq {
+						// 现金券
+						background-image: linear-gradient(180deg, #fb5c51 0%, #e92758 100%);
+						.coupon_flag {
+							background-image: -webkit-linear-gradient(30deg, #fff, transparent);
+							color: #cc214f !important;
+							.coupon_flag_tri {
+								border-left: 12px solid #f85253 !important;
+							}
+						}
+					}
+					&.djq {
+						// 代金券
+						background: linear-gradient(180deg, #4a8ce6, #3c64d4);
+					}
 					.row_coupon_top_t {
 						padding-left: 40rpx;
 						padding-top: 20rpx;
@@ -886,7 +968,7 @@ export default {
 					background: #cccccc;
 				}
 				.row_coupon_bot {
-					margin-top: 5px;
+					margin-top: 3px;
 					background-color: white;
 					border-radius: 7px;
 					box-shadow: 1px 1px 4px rgba(26, 26, 26, 0.2);
@@ -911,12 +993,41 @@ export default {
 						display: flex;
 						justify-content: space-between;
 						align-items: center;
-						margin-bottom: 20rpx;
+						// margin-bottom: 20rpx;
+						.coupon_type {
+							&.xjq {
+								// 现金券
+								color: #f04a5d;
+							}
+							&.djq {
+								// 代金券
+								color: #4a8ce6;
+							}
+							&.zkq {
+								// 折扣券
+								color: #e6a100;
+							}
+						}
 						.row_coupon_bot_r {
 							border: 2px solid #204ee1;
 							padding: 2px 10px;
 							border-radius: 15px;
 							color: #456de6;
+							&.xjq {
+								// 现金券
+								color: #cc214f;
+								border-color: #f04a5d;
+							}
+							&.djq {
+								// 代金券
+								color: #4a8ce6;
+								border-color: #3c64d4;
+							}
+							&.zkq {
+								// 折扣券
+								color: #e6a100;
+								border-color: #f8c502;
+							}
 						}
 						.efficacy {
 							border-color: #cccccc;

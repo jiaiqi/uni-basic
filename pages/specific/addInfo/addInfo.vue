@@ -2,7 +2,7 @@
 	<view class="reg-main">
 		<u-form :model="formModel" ref="uForm" label-width="200" :label-style="labelStyle">
 			<!-- <u-form-item label="压缩图片测试"><u-image width="200rpx" height="200rpx" :src="compressBaseString"></u-image></u-form-item> -->
-			<u-form-item label="证件照片" :required="true" prop="id_card_photo">
+			<!-- 			<u-form-item label="证件照片" :required="true" prop="id_card_photo">
 				<u-upload
 					:action="action"
 					:max-count="1"
@@ -18,8 +18,8 @@
 					:show-upload-list="true"
 					ref="uUpload"
 				></u-upload>
-			</u-form-item>
-			<u-form-item label="姓名" prop="name" :required="true"><u-input v-model="formModel.name" :placeholder="`请输入姓名`" /></u-form-item>
+			</u-form-item> -->
+			<u-form-item label="姓名" prop="name" :required="true"><u-input v-model="formModel.name" :placeholder="`请填写您的真实姓名`" /></u-form-item>
 			<u-form-item label="性别" :required="true" prop="sex">
 				<radio-group @change="radioChange">
 					<label v-for="(item, index) in sexList" :key="index">
@@ -33,7 +33,7 @@
 				<u-picker default-time="1990-01-01" v-model="showTimePicker" mode="time" @confirm="confirmDate"></u-picker>
 			</u-form-item>
 			<u-form-item label="地址" :required="true" prop="address"><u-input v-model="formModel.address" :placeholder="`请输入地址`" /></u-form-item>
-			<u-form-item label="证件号码" prop="id_card" :required="true"><u-input v-model="formModel.id_card" :placeholder="`请输入证件号码`" /></u-form-item>
+			<u-form-item label="证件号码" prop="id_card" :required="true"><u-input v-model="formModel.id_card" :placeholder="`请填写您真实的身份证号`" /></u-form-item>
 			<u-form-item label="手机号码" prop="mobile" :required="true"><u-input v-model="formModel.mobile" :placeholder="`请输入手机号码`" /></u-form-item>
 			<u-form-item :label-position="labelPosition" :required="true" label="图形验证码" prop="imageCode" label-width="200">
 				<u-input :border="border" placeholder="请输入图形验证码" v-model="imageCode" type="text" maxlength="4" @blur="validateImageCode" @confirm="validateImageCode"></u-input>
@@ -151,8 +151,19 @@ export default {
 				id_card: [
 					{
 						required: true,
-						message: '请输入证件号码',
+						message: '请填写您的身份证号',
 						// 可以单个或者同时写两个触发验证方式
+						trigger: ['change', 'blur']
+					},
+					{
+						// 自定义验证函数
+						validator: (rule, value, callback) => {
+							// 返回true表示校验通过，返回false表示不通过
+							let reg =  /^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$/
+							return reg.test(value)
+						},
+						message: '请填写正确的身份证号',
+						// 触发器可以同时用blur和change
 						trigger: ['change', 'blur']
 					}
 				],
@@ -237,10 +248,10 @@ export default {
 					this.$u.toast('请输入手机验证码');
 					return;
 				}
-				if (!this.formModel.id_card_photo) {
-					this.$u.toast('请上传身份证照片');
-					return;
-				}
+				// if (!this.formModel.id_card_photo) {
+				// 	this.$u.toast('请上传身份证照片');
+				// 	return;
+				// }
 				let req = [
 					{
 						serviceName: 'srvspocp_user_real_name_auth',
@@ -650,10 +661,10 @@ export default {
 	width: 100vw;
 	height: 100vh;
 	background-color: #fff;
-	// background-color: #f4f6fa;
-	// background-image: url(../../../static/img/regbg@2x.png);
+	background-color: #f4f6fa;
+	background-image: url(../../../static/img/regbg@2x.png);
 	background-position: bottom;
-	background-size: 100%;
+	background-size: 100% 380rpx;
 	background-repeat: no-repeat;
 	.u-form {
 		background-color: #fff;
