@@ -43,7 +43,52 @@
 			<view class="coupon-list-main">
 				<view class="row">
 					<view v-for="(item, index) in couponValidList" :key="index" class="receive_coupon">
-						<view
+						<view class="coupon-box">
+							<view class="coupon—main" :class="{ used:TabCur == 2,djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }">
+								<view class="coupon-band">
+									<text class="cuIcon-favorfill"></text>
+									<text class="margin-left-xs margin-right-xs">{{TabCur == 2?"已使用":"优惠"}}</text>
+									<text class="cuIcon-favorfill"></text>
+								</view>
+								<view class="coupon-left">
+									<view class="top">
+										<view class="units money" v-if="item.coupon_type !== '折扣券'">￥</view>
+										<view class="number" :class="{ zkq: item.coupon_type === '折扣券' }">{{ item.discount ? item.discount : 10 }}</view>
+										<view class="units" v-if="item.coupon_type === '折扣券'">折</view>
+									</view>
+									<view class="validity">有效期至:{{ item.used_end_time ? item.used_end_time.slice(0, 10) : '' }}</view>
+								</view>
+								<view class="coupon-right">
+									<view class="coupon-name">{{ item.coupon_name }}</view>
+									<!-- <view class="market-name">{{ item._merchant_no_disp }}</view> -->
+									<view class="coupon-rule">
+										<text v-if="item.coupon_type === '现金券'">直接抵扣现金</text>
+										<text v-if="item.coupon_type === '代金券'">满{{ item.consume_amount }}元立减</text>
+										<text v-if="item.coupon_type === '折扣券'">满{{ item.consume_amount ? item.consume_amount : 0 }}元可用</text>
+									</view>
+									<view
+										@click="drawCoupon(item)"
+										v-if="TabCur == 0"
+										class="coupon_button"
+										:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
+									>
+										点击领取
+									</view>
+									<view
+										@click="checkQrcode(item)"
+										v-else-if="TabCur == 1"
+										class="coupon_button"
+										:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
+									>
+										查看二维码
+									</view>
+									<!-- <view v-else-if="TabCur == 2">已使用</view> -->
+								</view>
+							</view>
+							<view class="circle-top"></view>
+							<view class="circle-bottom"></view>
+						</view>
+						<!-- 	<view
 							class="row_coupon_top"
 							:class="{ 'efficacy-top': TabCur === 2, djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
 						>
@@ -76,8 +121,8 @@
 								<view class="coupon_flag_tri"></view>
 								<text>{{ diffDay(item.used_end_time.split(' ')[0]) }}天后到期</text>
 							</view>
-						</view>
-						<view class="row_coupon_bot" :class="TabCur == 1 ? 'sel-qrcode' : ''">
+						</view> -->
+						<!-- <view class="row_coupon_bot" :class="TabCur == 1 ? 'sel-qrcode' : ''">
 							<view class="row_coupon_bot_left">
 								<view class="row_coupon_bot_l">
 									<view class="coupon_type" :class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }">
@@ -109,7 +154,7 @@
 								<text>使用说明：</text>
 								<text class="explain_text">{{ item.coupon_explain }}</text>
 							</view>
-						</view>
+						</view> -->
 					</view>
 				</view>
 			</view>
@@ -166,13 +211,13 @@ export default {
 			let color = '#2979ff';
 			switch (this.dropValue) {
 				case '现金券':
-					color = '#fb5c51';
+					color = '#ff9652';
 					break;
 				case '代金券':
-					color = '#4a8ce6';
+					color = '#fe2c1f';
 					break;
 				case '折扣券':
-					color = '#f9c816';
+					color = '#00cfff';
 					break;
 			}
 			return color;
@@ -869,6 +914,193 @@ export default {
 			margin: 0 auto;
 			.receive_coupon {
 				margin-top: 30rpx;
+				// 02d0fe
+				.coupon-box {
+					position: relative;
+					overflow: hidden;
+					.circle-top {
+						width: 40rpx;
+						height: 20rpx; /* 宽度的一半 */
+						border-radius: 100px 100px 0 0; /* 上和右为高度的长度 */
+						background-color: #f1f1f1;
+						border-bottom: none;
+						position: absolute;
+						left: 236rpx;
+						bottom: -8rpx;
+					}
+					.circle-bottom {
+						width: 40rpx;
+						height: 20rpx; /* 宽度的一半 */
+						border-radius: 0 0 100px 100px; /* 上和右为高度的长度 */
+						background-color: #f1f1f1;
+						border-bottom: none;
+						position: absolute;
+						left: 236rpx;
+						top: -8rpx;
+					}
+					&::after {
+						content: '';
+						position: absolute;
+						height: 100%;
+						width: 15rpx;
+						top: 0;
+						right:-6rpx;
+						background-image: radial-gradient(10px circle at 8px 10px, #f1f1f1 8px, transparent 5px);
+						background-size: 10rpx 40rpx;
+					}
+				}
+				.coupon—main {
+					width: 100%;
+					min-height: 100px;
+					padding:10rpx 0 ;
+					position: relative;
+					border-top-left-radius: 10rpx;
+					border-bottom-left-radius: 10rpx;
+					display: flex;
+					color: #fff;
+					&::before {
+						content: '';
+						position: absolute;
+						width: 4rpx;
+						left: 254rpx;
+						height: 100%;
+						// top: 25rpx;
+						background-image: linear-gradient(to bottom, #fff 0%, #fff 80%, transparent 50%);
+						background-size: 100% 25rpx;
+						background-repeat: repeat-y;
+					}
+					&.xjq {
+						// 现金券
+						background-image: linear-gradient(150deg, #ffb246, #fd543b);
+						box-shadow: -2px 0px 1px 1px #ffa865;
+						// box-shadow: 0 2px 4px rgba($color: #ffb246, $alpha: 0.5), 0 0 6px rgba($color: #fd543b, $alpha: 0.5);
+						.coupon-band {
+							color: #fd543b;
+						}
+					}
+					&.djq {
+						// 代金券
+						background-image: linear-gradient(150deg, #ff47b7, #fe2a14);
+						box-shadow: -2px 0px 2px 0px #ff47b7, -2px 0px 2px 0px #fe2a14;
+						// box-shadow: 0 2px 4px rgba($color: #ff47b7, $alpha: 0.5), 0 0 6px rgba($color: #ff47b7, $alpha: 0.5);
+						.coupon-band {
+							color: #ff2b15;
+						}
+					}
+			
+					&.zkq {
+						// 折扣券
+						background-image: linear-gradient(150deg, #00cfff, #b94af7, #f438d9);
+						box-shadow: -2px 0px 2px 0px #00cfff, -2px 0px 2px 0px #b94af7, -2px 0px 2px 0px #f438d9;
+						// box-shadow: 0 2px 4px rgba($color: #00cfff, $alpha: 0.5), 0 0 6px rgba($color: #f438d9, $alpha: 0.5);
+						.coupon-band {
+							color: #a44cfb;
+						}
+					}
+					.coupon-band {
+						position: absolute;
+						right: -90rpx;
+						top: 30rpx;
+						transform: rotate(45deg);
+						height: 40rpx;
+						background-color: #fff;
+						width: 300rpx;
+						text-align: center;
+						font-size: 20rpx;
+						background-image: linear-gradient(90deg, #fddd6d, #ffb82d);
+						.cuIcon-favorfill{
+							color: #fff;
+						}
+					}
+					&.used{
+						background-image: linear-gradient(90deg, #a2a2a2 , #909090 80%);
+						box-shadow: none;
+						.coupon-band {
+							background-color: #f1f1f1;
+							background-image: none;
+							color: #999;
+							.cuIcon-favorfill{
+								color: #999;
+							}
+						}
+					}
+					.coupon-left {
+						display: flex;
+						width: 254rpx;
+						height: 100%;
+						align-items: center;
+						flex-direction: column;
+						.top {
+							width: 100%;
+							padding-left: 40rpx;
+							display: flex;
+							flex: 1;
+							align-items: flex-end;
+							padding-bottom: 10rpx;
+							.units {
+								font-size: 20rpx;
+								height: 100rpx;
+								padding-top: 50rpx;
+								&.money {
+									font-size: 40rpx;
+									padding-top: 30rpx;
+								}
+							}
+							.number {
+								display: flex;
+								height: 100rpx;
+								justify-content: center;
+								align-items: center;
+								font-size: 100rpx;
+								min-width: 120rpx;
+								padding:0 10rpx;
+								&.zkq{
+									width: 100rpx;
+								}
+							}
+						}
+						.validity {
+							font-size: 20rpx;
+							width: 100%;
+							padding-bottom: 20rpx;
+							text-align: center;
+						}
+					}
+					.coupon-right {
+						display: flex;
+						flex-direction: column;
+						justify-content: center;
+						align-items: center;
+						width: 380rpx;
+						.coupon-name {
+							font-size: 40rpx;
+							letter-spacing: 5rpx;
+							padding: 20rpx;
+						}
+						.coupon-rule {
+							font-size: 24rpx;
+							padding: 0 0 10rpx;
+						}
+						.coupon_button {
+							width: 200rpx;
+							height: 40rpx;
+							background-color: #fff;
+							border-radius: 40rpx;
+							text-align: center;
+							line-height: 40rpx;
+							font-size: 20rpx;
+							&.xjq {
+								color: #fd543b;
+							}
+							&.djq {
+								color: #f438d9;
+							}
+							&.zkq {
+								color: #ff2b15;
+							}
+						}
+					}
+				}
 				.row_coupon_top {
 					color: white;
 					font-size: 28rpx;
@@ -1052,122 +1284,6 @@ export default {
 		}
 	}
 }
-// .coupon-list-main {
-// 	// height: calc(100vh - 45px);
-// 	display: flex;
-// 	flex-direction: column;
-// 	align-items: center;
-// 	// padding: 9px 0 57px 0;
-// 	background-color: #f5f5f5;
-// 	margin-top: 20upx;
-// 	.row {
-// 		width: 95%;
-// 		.carrier {
-// 			display: flex;
-// 			background-color: white;
-// 			justify-content: space-around;
-// 			margin-bottom: 15px;
-// 			.left {
-// 				width: 70%;
-// 				display: flex;
-// 				flex-direction: column;
-// 				.title {
-// 					padding-top: 3vw;
-// 					width: 90%;
-// 					margin: 0 5%;
-// 					font-size: 17px;
-// 				}
-// 				.term {
-// 					width: 90%;
-// 					margin: 15px 5%;
-// 					font-size: 12px;
-// 					color: #999;
-// 				}
-// 				position: relative;
-// 				.gap-top,
-// 				.gap-bottom {
-// 					position: absolute;
-// 					width: 20upx;
-// 					height: 20upx;
-// 					right: -18upx;
-// 					border-radius: 100%;
-// 					background-color: #f5f5f5;
-// 				}
-// 				.gap-top {
-// 					top: -10upx;
-// 				}
-// 				.gap-bottom {
-// 					bottom: -10upx;
-// 				}
-// 				.shixiao {
-// 					position: absolute;
-// 					right: 0px;
-// 					font-size: 150upx;
-// 					z-index: 6;
-// 					color: rgba(153, 153, 153, 0.2);
-// 					width: 60px;
-// 					height: 60px;
-// 					image {
-// 						width: 100%;
-// 						height: 100%;
-// 					}
-// 				}
-// 				.un-use {
-// 					right: 3px;
-// 					top: 10px;
-// 					width: 60px;
-// 					height: 60px;
-// 					.lose {
-// 						image {
-// 							width: 100%;
-// 							height: 100%;
-// 						}
-// 					}
-// 				}
-// 			}
-// 			.right {
-// 				width: 28%;
-// 				display: flex;
-// 				flex-direction: column;
-// 				justify-content: space-around;
-// 				color: white;
-// 				align-items: center;
-// 				background: linear-gradient(to right, #DA3D3E, #ee827f);
-// 				.ticket {
-// 					display: flex;
-// 					align-items: center;
-// 					.num {
-// 						font-size: 20px;
-// 						font-weight: 600;
-// 					}
-// 					.unit {
-// 						font-size: 12px;
-// 					}
-// 				}
-// 				.use {
-// 					height: 20px;
-// 					border-radius: 10px;
-// 					background: white;
-// 					color: #ee827f;
-// 					padding: 2px 10px;
-// 					font-size: 12px;
-// 				}
-// 			}
-// 			.is-lose {
-// 				background: linear-gradient(to right, #aaa, #999);
-// 				.use {
-// 					color: #aaa;
-// 				}
-// 			}
-// 			.is-use {
-// 				background: linear-gradient(to right, #aaa, #999);
-// 				.use {
-// 					color: #aaa;
-// 				}
-// 			}
-// 		}
-// 	}
-// }
 
 .coupon_qrcod {
 	width: 300px;
