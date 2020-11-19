@@ -16,11 +16,25 @@
 					<text class="text-grey">{{ couponInfo.coupon_type }}</text>
 				</view>
 			</view>
-			<view class="cu-item" :class="menuArrow ? 'arrow' : ''">
+<!-- 			<view class="cu-item" :class="menuArrow ? 'arrow' : ''" v-if="couponInfo.consume_amount">
 				<view class="content">
 					<text class="cuIcon-circlefill text-grey"></text>
-					<text class="text-grey">优惠券金额：</text>
+					<text class="text-grey">消费金额：</text>
 					<text class="text-grey">{{ couponInfo.consume_amount }}</text>
+				</view>
+			</view> -->
+			<view class="cu-item" :class="menuArrow ? 'arrow' : ''" v-if="couponInfo.coupon_type === '折扣券'">
+				<view class="content">
+					<text class="cuIcon-circlefill text-grey"></text>
+					<text class="text-grey">折扣比例：</text>
+					<text class="text-grey">{{ couponInfo.discount }}</text>
+				</view>
+			</view>
+			<view class="cu-item" :class="menuArrow ? 'arrow' : ''" v-if="couponInfo.used_amount&&couponInfo.coupon_type !== '折扣券'">
+				<view class="content">
+					<text class="cuIcon-circlefill text-grey"></text>
+					<text class="text-grey">可抵扣金额：</text>
+					<text class="text-grey">{{ couponInfo.used_amount }}元</text>
 				</view>
 			</view>
 			<view class="cu-item" :class="menuArrow ? 'arrow' : ''">
@@ -41,7 +55,14 @@
 				<view class="content">
 					<text class="cuIcon-circlefill text-grey"></text>
 					<text class="text-grey">优惠券使用条件：</text>
-					<text class="text-grey">消费满足{{ couponInfo.used_amount }}元可使用</text>
+					<text class="text-grey">消费满足{{ couponInfo.consume_amount }}元可使用</text>
+				</view>
+			</view>
+			<view v-if="couponInfo.coupon_explain" class="cu-item" :class="menuArrow ? 'arrow' : ''">
+				<view class="content">
+					<text class="cuIcon-circlefill text-grey"></text>
+					<text class="text-grey">使用说明：</text>
+					<text class="text-grey">{{ couponInfo.coupon_explain }}</text>
 				</view>
 			</view>
 			<view v-if="couponInfo.explain" class="cu-item" :class="menuArrow ? 'arrow' : ''">
@@ -62,6 +83,7 @@ export default {
 	components: {},
 	data() {
 		return {
+			store_no:'',
 			background: {
 				backgroundColor: '#ec625c'
 
@@ -98,11 +120,6 @@ export default {
 			let res = await this.$http.post(url, req);
 			if (res.data.state === 'SUCCESS') {
 				let couponInfo = res.data.response[0].response.couponReceive;
-				// if (couponInfo.coupon_type === '代金券' || couponInfo.coupon_type === '折扣券') {
-				// 	// consume_amount 消费金额
-					
-				// }
-				// debugger;
 				this.couponInfo = couponInfo;
 			}
 		},
@@ -121,7 +138,7 @@ export default {
 						{
 							colName: 'store_no',
 							ruleType: 'eq',
-							value: uni.getStorageSync('current__info').store_no
+							value: this.store_no
 							// value: uni.getStorageSync('realNameInfo').user._store_user[0].store_no
 						}
 					]
@@ -155,6 +172,9 @@ export default {
 		let str = option.qrcodeInfo;
 		console.log('--str---', str);
 		this.getCouponQrcodeInfo(str);
+		if(option.store_no){
+			this.store_no =option.store_no
+		}
 	}
 };
 </script>

@@ -87,7 +87,7 @@
         },
         "template" : "template.html",
         "title" : "智慧宝塔一码通",
-        "domain" : "https://wx2.100xsys.cn",
+        "domain" : "https://app.shuzibaota.com/",
         "devServer" : {
             "https" : false
         }

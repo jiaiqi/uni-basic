@@ -34,7 +34,6 @@ function compressUpload(file, quality = 0.5, maxPx) {
 			} = image;
 			if (maxPx) {
 				// 限制最大宽度/高度
-				debugger
 				if (image.width > image.height) {
 					height = Math.floor(image.height / (image.width / maxPx));
 					width = maxPx;

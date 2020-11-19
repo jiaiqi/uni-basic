@@ -63,7 +63,7 @@
 				</view>
 			</view>
 			<business-info
-				:currentUser="currentUser"
+				:currentUser="currentIdentity"
 				@changeUser="changeUser"
 				@test="test"
 				@changeDetail="changeDetail"
@@ -116,7 +116,7 @@
 				</view>
 			</view>
 		</view>
-		<view class="search-bar" v-if="presentPage==='record'">
+		<view class="search-bar" v-if="presentPage === 'record'">
 			<u-search placeholder="输入使用时间进行搜索" @clear="onClear" :show-action="true" :animation="true" v-model="keyword" @custom="onSearch"></u-search>
 		</view>
 		<sPullScroll
@@ -126,7 +126,7 @@
 			:pullUp="loadData"
 			:enablePullDown="true"
 			:enablePullUp="true"
-			:top="presentPage==='record'?200:130"
+			:top="presentPage === 'record' ? 200 : 130"
 			:fixed="true"
 			:bottom="0"
 			finishText="我是有底线的..."
@@ -142,12 +142,12 @@
 			></staffList>
 		</sPullScroll>
 		<view class="public-button-box" @click="goForm()">
-			<view class="add-button" v-if="currentIdentity == 'merchant' && presentPage == 'staff' && is_manager"></view>
+			<view class="add-button" v-if="currentIdentity === 'merchant' && presentPage == 'staff' && isManager"></view>
 			<view class="add-button" v-if="currentIdentity === 'store' && presentPage == 'storeStaff' && storeUserInfo.audit_status == '审核通过' && isManager"></view>
 			<!-- <view class="add-button" v-if="currentIdentity == 'store' && presentPage == 'storeStaff' && storeItem.audit_status == '审核通过' && is_manager"></view> -->
 		</view>
 
-		<view v-if="currentIdentity === 'store' && presentPage == 'merchantInfo' &&storeItem.audit_status == '审核拒绝'" class="button-box">
+		<view v-if="currentIdentity === 'store' && presentPage == 'merchantInfo' && storeItem.audit_status == '审核拒绝'" class="button-box">
 			<view class="button" @click="updateInfo(null)">修改</view>
 		</view>
 	</view>
@@ -162,8 +162,8 @@ export default {
 	components: { staffList, businessInfo, sPullScroll },
 	data() {
 		return {
-			keyword:"",//搜索关键词
-			
+			keyword: '', //搜索关键词
+
 			shopMsgList: [],
 			heightStyle: 'calc(100vh-200upx)',
 			isRedict: false,
@@ -230,11 +230,7 @@ export default {
 				listData: []
 			},
 			currItem: {},
-			is_manager: uni.getStorageSync('current__info').is_manager
-				? uni.getStorageSync('current__info').is_manager === '是'
-				: uni.getStorageSync('current__info').identity
-				? uni.getStorageSync('current__info').identity === '管理员'
-				: false,
+			is_manager: false,
 			isAdmin: false, // 是否是商场管理员
 			isManager: false, // 是否是商户管理员
 			merchantUserInfo: {}, //当前商场用户信息
@@ -248,7 +244,7 @@ export default {
 	computed: {
 		isGlys() {
 			try {
-				if (this.currentUser === 'merchant') {
+				if (this.currentIdentity === 'merchant') {
 					return uni.getStorageSync('current_info').value && uni.getStorageSync('current__info').identity === '管理员' ? uni.getStorageSync('current__info').identity : false;
 				} else {
 					return uni.getStorageSync('current__info').is_manager === '是';
@@ -257,7 +253,7 @@ export default {
 		}
 	},
 	methods: {
-		onClear(){
+		onClear() {
 			this.onRefresh();
 		},
 		onSearch(e) {
@@ -323,9 +319,9 @@ export default {
 		},
 		async dels(item) {
 			let serviceName = null;
-			if (this.currentUser === 'merchant') {
+			if (this.currentIdentity === 'merchant') {
 				serviceName = 'srvspocp_merchant_principal_delete';
-			} else if (this.currentUser === 'store') {
+			} else if (this.currentIdentity === 'store') {
 				serviceName = 'srvspocp_store_users_delete';
 			}
 			const url = this.getServiceUrl('spocp', serviceName, 'operate');
@@ -375,8 +371,9 @@ export default {
 				});
 			}
 		},
-		/* **/
+		/* 调取微信扫码并返回扫码结果 **/
 		scanQrcode() {
+			let store_no = this.storeItem.store_no;
 			if (this.storeItem.audit_status === '审核通过') {
 				jweixin.ready(function() {
 					jweixin.checkJsApi({
@@ -386,12 +383,12 @@ export default {
 							jweixin.scanQRCode({
 								needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
 								scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
-								success: function(res) {
-									var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-									uni.navigateTo({
-										url: '/pages/specific/qrcodeDetail/qrcodeDetail?qrcodeInfo=' + result
-									});
+								success: function(rest) {
+									var result = rest.resultStr; // 当needResult 为 1 时，扫码返回的结果
 									console.log('扫描二维码结果====', result);
+									uni.navigateTo({
+										url: '/pages/specific/qrcodeDetail/qrcodeDetail?qrcodeInfo=' + result + '&store_no=' + store_no
+									});
 								},
 								error(e) {
 									console.error(e);
@@ -440,16 +437,16 @@ export default {
 			let page = this.pageInfo;
 			this.pageInfo.pageNo = pullScroll.page;
 			console.log(pullScroll.page);
-			if (this.currentUser === 'merchant' && this.presentPage === 'merchant') {
+			if (this.currentIdentity === 'merchant' && this.presentPage === 'merchant') {
 				this.getMerchantList(this.shopInfos.value);
 			}
-			if (this.currentUser === 'merchant' && this.presentPage === 'staff') {
+			if (this.currentIdentity === 'merchant' && this.presentPage === 'staff') {
 				this.getStaffList(this.shopInfos.value);
 			}
-			if (this.currentUser === 'store' && this.presentPage === 'record') {
+			if (this.currentIdentity === 'store' && this.presentPage === 'record') {
 				this.getScacList();
 			}
-			if (this.currentUser === 'store' && this.presentPage === 'storeStaff') {
+			if (this.currentIdentity === 'store' && this.presentPage === 'storeStaff') {
 				this.getStoreStaffList();
 			}
 		},
@@ -463,18 +460,6 @@ export default {
 			} else if (this.currentIdentity === 'store') {
 				no = this.storeUserInfo.store_no;
 			}
-			// if (this.currentUser === 'merchant') {
-			// 	if (current_info) {
-			// 		no = current_info.merchant_no;
-			// 	}
-			// } else {
-			// 	if (current_info) {
-			// 		no = current_info.store_no;
-			// 	}
-			// }
-			// let currentInfo = {
-			// 	value: no
-			// };
 			uni.navigateTo({
 				url: `/pages/specific/principalFRom/principalFRom?status=${this.currentIdentity}&no=${no}`
 			});
@@ -512,42 +497,12 @@ export default {
 						// 需要调用的方法接口
 						jsApiList: ['scanQRCode']
 					});
-					jweixin.ready(() => {});
 					jweixin.error(function(res) {
 						// alert(JSON.stringify(res));
-						console.log(res);
+						console.log(res, 'jweixin.error');
 					});
 				} else {
 				}
-			});
-		},
-		/* 调取微信扫码并返回扫码结果**/
-		toScan() {
-			console.log('进入toScan函数');
-			jweixin.ready(function() {
-				jweixin.checkJsApi({
-					jsApiList: ['scanQRCode'],
-					success: function(res) {
-						console.warn('---------------打开扫一扫---------------', res);
-						jweixin.scanQRCode({
-							needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
-							scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
-							success: function(res) {
-								var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-								uni.navigateTo({
-									url: '/pages/specific/qrcodeDetail/qrcodeDetail?qrcodeInfo=' + result
-								});
-								console.log('扫描二维码结果====', result);
-							},
-							error(e) {
-								console.error(e);
-							}
-						});
-					},
-					error(e) {
-						console.error('checkJsApi失败', e);
-					}
-				});
 			});
 		},
 		hideModal(type) {
@@ -583,7 +538,7 @@ export default {
 					pageNo: this.pageInfo.pageNo
 				}
 			};
-			if(this.keyword){
+			if (this.keyword) {
 				req.condition = req.condition.concat({
 					colName: 'confirm_time',
 					ruleType: 'like',
@@ -611,10 +566,15 @@ export default {
 			console.log('item-', item);
 			this.TabCur = val;
 			this.presentPage = item.pageInfo;
-			this.is_manager = uni.getStorageSync('current__info').is_manager
-				? uni.getStorageSync('current__info').is_manager === '是'
-				: uni.getStorageSync('current__info').identity
-				? uni.getStorageSync('current__info').identity === '管理员'
+			this.is_manager = this.storeUserInfo.is_manager
+				? this.storeUserInfo.is_manager === '是'
+				: this.merchantUserInfo.identity
+				? this.merchantUserInfo.identity === '管理员'
+				: false;
+			this.isManager = this.storeUserInfo.is_manager
+				? this.storeUserInfo.is_manager === '是'
+				: this.merchantUserInfo.identity
+				? this.merchantUserInfo.identity === '管理员'
 				: false;
 			let self = this;
 			switch (item.pageInfo) {
@@ -699,9 +659,9 @@ export default {
 					if (user1.is_manager === '是') {
 						self.isRedict = true;
 					}
-					if (this.currentUser === 'merchant') {
+					if (this.currentIdentity === 'merchant') {
 						this.getShopDetail(this.shopInfos.value);
-					} else if (this.currentUser === 'store') {
+					} else if (this.currentIdentity === 'store') {
 						this.getMerchantList(this.shopInfos.value);
 					}
 					break;
@@ -863,7 +823,6 @@ export default {
 					}
 				]
 			};
-			debugger;
 			let res = await this.$http.post(url, req);
 			this.storeItem = res.data.data[0];
 		},
@@ -872,8 +831,8 @@ export default {
 			let tabData = [];
 			this.presentPage = 'merchantInfo';
 			this.modalName = '';
-			this.currentUser = e;
 			this.currentIdentity = e; // 当前身份
+			let user = uni.getStorageSync('realNameInfo').user;
 			if (e === 'merchant') {
 				//商场管理员(审批者)
 				tabData = [
@@ -915,62 +874,20 @@ export default {
 			}
 			this.isShow = true;
 			this.tabData = this.tabData.concat(tabData);
-			return;
-			let user = uni.getStorageSync('realNameInfo').user;
+			// return;
 			this.modalName = '';
-			this.currentUser = e;
-			// let tabData = [];
+			this.currentIdentity = e;
 			if (e === 'merchant') {
 				//商场负责人
 				let currentInfo = { value: user._merchant_user[0].merchant_no };
 				uni.setStorageSync('current_info', currentInfo);
 				uni.setStorageSync('current__info', user._merchant_user[0]);
-				this.presentPage = 'merchantInfo';
-				tabData = [
-					{
-						label: '商场详情',
-						pageInfo: 'merchantInfo'
-					},
-					{
-						label: '商户管理',
-						pageInfo: 'merchant'
-					},
-					{
-						label: '负责人',
-						pageInfo: 'staff'
-					}
-				];
-				this.isShow = false;
-				this.getShopDetail();
 			} else if (e === 'store') {
 				//商户负责人
 				let currentInfo = { value: user._store_user[0].store_no };
 				uni.setStorageSync('current_info', currentInfo);
 				uni.setStorageSync('current__info', user._store_user[0]);
-				this.presentPage = 'merchantInfo';
-				tabData = [
-					{
-						label: '商户信息',
-						pageInfo: 'merchantInfo'
-					},
-					{
-						label: '员工管理',
-						pageInfo: 'storeStaff'
-					},
-					{
-						label: '扫码核销',
-						pageInfo: 'code'
-					},
-					{
-						label: '核销记录',
-						pageInfo: 'record'
-					}
-				];
 			}
-			this.tabData = tabData;
-			this.isShow = true;
-			this.getMerchantList();
-			// })
 		},
 		/* 查询商户列表**/
 		async getMerchantList(no = null) {
@@ -1050,6 +967,7 @@ export default {
 				if (self.merchantUserInfo.identity === '管理员') {
 					// 默认商场用户是商场管理员
 					self.isAdmin = true;
+					self.isManager = true;
 				}
 			}
 			if (self.storeUserList.length > 0) {
@@ -1138,106 +1056,6 @@ export default {
 					}
 				});
 			}
-			return;
-			let user = res.user;
-			// let user = uni.getStorageSync('realNameInfo').user;
-			let user2 = uni.getStorageSync('current__info');
-			if (user2.identity === '管理员') {
-				self.isRedict = true;
-			} else {
-				self.isRedict = false;
-			}
-			if (user2.is_manager === '是') {
-				self.isRedict = true;
-			} else {
-				self.isRedict = false;
-			}
-			if (user._store_user.length > 0 && user._merchant_user.length > 0) {
-				self.modalName = 'Modal';
-			} else if (user._store_user.length > 0) {
-				uni.setStorageSync('current__info', user._store_user[0]);
-				uni.setStorageSync('current_info', { value: user._store_user[0].store_no });
-				self.currentUser = 'store';
-				self.presentPage = 'merchantInfo';
-				self.getMerchantList();
-				let tabData = [
-					{
-						label: '商户信息',
-						pageInfo: 'merchantInfo'
-					},
-					{
-						label: '员工管理',
-						pageInfo: 'storeStaff'
-					},
-					{
-						label: '扫码核销',
-						pageInfo: 'code'
-					},
-					{
-						label: '核销记录',
-						pageInfo: 'record'
-					}
-				];
-				self.tabData = tabData;
-				self.isShow = true;
-			} else if (user._merchant_user.length > 0) {
-				uni.setStorageSync('current__info', user._merchant_user[0]);
-				uni.setStorageSync('current_info', { value: user._merchant_user[0].merchant_no });
-				self.currentUser = 'merchant';
-				self.presentPage = 'merchantInfo';
-				// self.getMerchantList()
-				self.getShopDetail();
-				let tabData = [
-					{
-						label: '商场详情',
-						pageInfo: 'merchantInfo'
-					},
-					{
-						label: '商户管理',
-						pageInfo: 'merchant'
-					},
-					{
-						label: '负责人',
-						pageInfo: 'staff'
-					}
-				];
-				self.tabData = tabData;
-				self.isShow = true;
-			} else if (user._store_user.length <= 0 && user._merchant_user.length <= 0) {
-				uni.showModal({
-					title: '提示',
-					content: '您未注册商户,是否前往商户注册?',
-					success(res) {
-						if (res.confirm) {
-							// 跳转到商家登记页面
-							uni.navigateTo({
-								url: '/pages/specific/merchantReg/merchantReg'
-							});
-						} else {
-							// 跳转到首页
-							uni.reLaunch({
-								url: self.$api.homePath,
-								fail(res) {
-									if (res.errMsg) {
-										if (res.errMsg.indexOf('is not fond') !== -1 || self.$api.homePath.indexOf('http') !== -1) {
-											window.location.href = self.$api.homePath;
-										}
-									}
-								}
-							});
-						}
-					}
-				});
-			}
-			user = uni.getStorageSync('current__info');
-			if (user.identity === '管理员') {
-				self.isRedict = true;
-			}
-			if (user.is_manager === '是') {
-				self.isRedict = true;
-			}
-			console.log('---------', self.isRedict);
-			// }
 		}
 	},
 	onShow() {
@@ -1245,9 +1063,9 @@ export default {
 			this.getStaffList();
 		} else if (this.presentPage && this.presentPage === 'storeStaff') {
 			this.getStoreStaffList();
-		} else if (this.currentUser && this.currentUser === 'merchant' && this.presentPage && this.presentPage === 'merchant') {
+		} else if (this.currentIdentity && this.currentIdentity === 'merchant' && this.presentPage && this.presentPage === 'merchant') {
 			this.getMerchantList();
-		} else if (this.currentUser && this.currentUser === 'store' && this.presentPage && this.presentPage === 'merchantInfo') {
+		} else if (this.currentIdentity && this.currentIdentity === 'store' && this.presentPage && this.presentPage === 'merchantInfo') {
 			this.getMerchantList();
 		}
 	}
@@ -1255,10 +1073,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-	.search-bar{
-		background-color: #fff;
-		padding:  10px;
-	}
+.search-bar {
+	background-color: #fff;
+	padding: 10px;
+}
 .merch-wrap {
 	background-color: #f2f5fa;
 	min-height: 100vh;

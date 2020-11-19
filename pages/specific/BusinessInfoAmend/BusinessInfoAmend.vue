@@ -97,7 +97,7 @@ export default {
 			},
 			type: '',
 			dadaItem: {},
-			action: 'https://srvms.100xsys.cn/file/upload',
+			action: this.$api.upload,
 			businfileList: [],
 			storefileList: [],
 			radioList: [
@@ -141,7 +141,7 @@ export default {
 		};
 	},
 	async onLoad(option) {
-		// this.action = this.$api.upload;
+		this.action = this.$api.upload;
 		if (option && option.data) {
 			const item = JSON.parse(decodeURIComponent(option.data));
 			console.log(item);
@@ -168,7 +168,6 @@ export default {
 						url: this.$api.getFilePath + img.fileurl + '&bx_auth_ticket=' + uni.getStorageSync('bx_auth_ticket') + '&thumbnailType=fwsu_100'
 					};
 				});
-				debugger;
 			} else {
 				if (item.businessImgList.length > 0) {
 					this.businfileList = item.businessImgList.map(img => {
@@ -198,7 +197,6 @@ export default {
 	},
 	methods: {
 		removeFile(index, lists, name) {
-			debugger;
 			let file_no = '';
 			let deletedImagePath = '';
 			let imageIndex = index;

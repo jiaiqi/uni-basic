@@ -308,9 +308,7 @@
 		<view class="cu-modal" :class="modalName == 'Image' ? 'show' : ''" @tap="hideModal">
 			<view class="cu-dialog" style="height: 100vh;width:100vw;z-index: 999999;">
 				<view class="bg-img" :style="'background-image: url(' + imgurl + ');height:100%;background-size:100%;'">
-					<view class="cu-bar justify-end text-blue">
-						<!-- <view class="action" @tap="hideModal"><text class="cuIcon-close text-blue"></text></view> -->
-					</view>
+					<view class="cu-bar justify-end text-blue"><!-- <view class="action" @tap="hideModal"><text class="cuIcon-close text-blue"></text></view> --></view>
 				</view>
 				<!-- <view class="cu-bar bg-white">
 					<view class="action margin-0 flex-sub  solid-left" @tap="hideModal">关闭</view>
@@ -430,7 +428,7 @@ export default {
 			}
 		}
 	},
-	name: 'formItem',	
+	name: 'formItem',
 	data() {
 		return {
 			defaultLineVal: '',
@@ -492,17 +490,17 @@ export default {
 				return val;
 			}
 		},
-		imgurl(){
-			if(typeof this.imageIndex == 'number'){				
-				let currIndex = this.imageIndex
-				let imgArr = this.imagesUrl
-				let imgStr = null
-				if(imgArr[currIndex].indexOf('thumbnailType') != -1){
-					let endIndex = imgArr[currIndex].lastIndexOf('&')
-					imgStr = imgArr[currIndex].slice(0,endIndex)
+		imgurl() {
+			if (typeof this.imageIndex == 'number') {
+				let currIndex = this.imageIndex;
+				let imgArr = this.imagesUrl;
+				let imgStr = null;
+				if (imgArr[currIndex].indexOf('thumbnailType') != -1) {
+					let endIndex = imgArr[currIndex].lastIndexOf('&');
+					imgStr = imgArr[currIndex].slice(0, endIndex);
 				}
 				// console.log('imgStr',imgStr)
-				return imgStr
+				return imgStr;
 			}
 		},
 		showOptionsListRun: function() {
@@ -861,7 +859,7 @@ export default {
 				mask: true
 			});
 			let _this = this;
-			const reqUrl = _this.getServiceUrl('daq', 'srvdaq_orc_idcard_extraction', 'operate');
+			const reqUrl = this.getServiceUrl('spocp', 'srvdaq_orc_idcard_extraction', 'operate');
 			const reqData = [
 				{
 					serviceName: 'srvdaq_orc_idcard_extraction',
@@ -995,7 +993,7 @@ export default {
 			this.fieldData.value = val.result;
 			this.onInputBlur();
 			this.$emit('on-form-item', this.fieldData);
-							this.getValid();
+			this.getValid();
 		},
 		changePopup(e) {
 			this.$emit('on-form-item', this.fieldData);

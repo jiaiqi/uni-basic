@@ -28,7 +28,9 @@
 					makeOnLoad
 					@makeComplete="makeComplete"
 				></uni-qrcode>
-				<image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image>
+				
+				<img class="code_img" v-show="!isShow" :src="qrcodeSrc">
+				<!-- <image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image> -->
 				<view class="tip-text" v-show="!isShow">
 					<view v-show="!iconIsShow" class="tgtit">
 						<text class="left-text margin-right-xs">更新于{{ refreshTime }}</text>
@@ -213,7 +215,7 @@ export default {
 		}
 	}
 	.tip {
-		min-height: 300rpx;
+		// min-height: 300rpx;
 		width: 100%;
 		background-color: #fff;
 		border-radius: 20rpx;

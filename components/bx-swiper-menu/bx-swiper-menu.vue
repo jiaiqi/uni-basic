@@ -95,7 +95,7 @@ export default {
       deep: true,
       immediate: true,
       handler(newValue, oldValue) {
-				this.backendUrl = this.$api.backEndAddress
+				this.backendUrl = this.$api.serviceAddress
         if (Array.isArray(newValue) && newValue.length > 8) {
           // this.menus = newValue.slice(0,8)
         }

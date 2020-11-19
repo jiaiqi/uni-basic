@@ -1112,11 +1112,6 @@ const install = (Vue, options) => {
 					data: res.data.data[0],
 					user: res.data.data[0]
 				}
-				// let merchantInfo = await Vue.prototype.selectMerchantInfo()
-				// if (merchantInfo) {
-				// 	realNameInfo.merchant = merchantInfo
-				// 	realNameInfo._merchant_user = merchantInfo
-				// } else 
 				if (res.data._merchant_user && Object.keys(res.data._merchant_user).length > 0) {
 					realNameInfo.merchant = res.data._merchant_user
 					realNameInfo.employeeInfo = res.data._merchant_user
@@ -1160,10 +1155,6 @@ const install = (Vue, options) => {
 			});
 			num += 1;
 			this.selectRealNameInfo(num);
-			// uni.showToast({
-			// 	title: res.data.resultMessage,
-			// 	icon: 'none'
-			// });
 		}
 	}
 	Vue.prototype.setBackUrl = function() {

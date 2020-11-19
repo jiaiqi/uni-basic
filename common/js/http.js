@@ -12,7 +12,7 @@ fly.interceptors.request.use((request) => {
 	// 如果是浏览器运行的记录 请求的页面path和参数
 	if (request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1 || request.url.indexOf(
 			'srvsso_matching_image_code_check') !== -1 || request.url.indexOf('srvsso_matching_send_node') !== -1 || request.url
-		.indexOf('srvsso_matching_image_code') !== -1 || request.url.indexOf('srvspocp_user_reserve_record_select') !== -1)  {
+		.indexOf('srvsso_matching_image_code') !== -1 || request.url.indexOf('srvspocp_user_reserve_record_select') !== -1) {
 		// uni.showLoading({
 		// 	mask: true,
 		// 	title:'正在识别'
@@ -68,7 +68,6 @@ fly.interceptors.request.use((request) => {
 //添加响应拦截器，响应拦截器会在then/catch处理之前执行
 fly.interceptors.response.use(
 	(res) => {
-		//只将请求结果的data字段返回
 		if (res.request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1) {} else if (res.request.url.indexOf(
 				'srvfile_attachment_select') !== -1) {
 			// 获取文件路径
@@ -127,13 +126,18 @@ fly.interceptors.response.use(
 	(err) => {
 		//发生网络错误后会走到这里
 		loading ? loading.close() : '';
-		// loading = Vue.prototype.$loading({
-		// 	lock: true,
-		// 	text: '网络错误! 请检查网络或刷新重试',
-		// 	loading: false,
-		// 	customClass:"test",
-		// 	test:'123123'
-		// });
+		if (err.status && (err.status === 429 || err.status === "429")) {
+			// too many request
+			uni.showToast({
+				title: '当前使用人数过多，请稍后再试',
+				icon: "none"
+			})
+		} else {
+			uni.showToast({
+				title: '网络错误! 请检查网络或刷新重试',
+				icon: "none"
+			})
+		}
 	}
 )
 export default fly

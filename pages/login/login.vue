@@ -9,7 +9,7 @@
 			</view>
 			<view class="login-list flex border-all">
 				<view class="cuIcon-people flex"></view>
-				<view class="login-input"><input autocomplete="off" type="text" maxlength="30" placeholder="请输入账号" class="is-input1 " v-model="user.user_no" /></view>
+				<view class="login-input"><input autocomplete="off" type="text" maxlength="60" placeholder="请输入账号" class="is-input1 " v-model="user.user_no" /></view>
 			</view>
 			<view class="login-list flex border-all">
 				<view class="cuIcon-lock flex"></view>
@@ -61,7 +61,6 @@ export default {
 				console.log('已登录，不进行初始化授权', uni.getStorageSync('isLogin'));
 				let backUrl = uni.getStorageSync('backUrl');
 				this.selectRealNameInfo().then(res => {
-					debugger
 					if (backUrl && backUrl !== '/' && backUrl !== '/ymt/') {
 						console.log('即将跳转到backUrl页面', backUrl);
 						if (backUrl.indexOf('/login/login') !== -1) {

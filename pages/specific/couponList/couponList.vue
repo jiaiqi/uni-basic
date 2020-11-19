@@ -44,16 +44,27 @@
 				<view class="row">
 					<view v-for="(item, index) in couponValidList" :key="index" class="receive_coupon">
 						<view class="coupon-box">
-							<view class="coupon—main" :class="{ used:TabCur == 2,djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }">
+							<view
+								class="coupon—main"
+								:class="{
+									used: TabCur == 2,
+									djq: item.coupon_type === '代金券',
+									xjq: item.coupon_type === '现金券',
+									zkq: item.coupon_type === '折扣券'
+								}"
+								@click="clickCoupon(item, TabCur)"
+							>
 								<view class="coupon-band">
 									<text class="cuIcon-favorfill"></text>
-									<text class="margin-left-xs margin-right-xs">{{TabCur == 2?"已使用":"优惠"}}</text>
+									<text class="margin-left-xs margin-right-xs">{{ TabCur == 2 ? '已使用' : '优惠' }}</text>
 									<text class="cuIcon-favorfill"></text>
 								</view>
 								<view class="coupon-left">
 									<view class="top">
 										<view class="units money" v-if="item.coupon_type !== '折扣券'">￥</view>
-										<view class="number" :class="{ zkq: item.coupon_type === '折扣券' }">{{ item.discount ? item.discount : 10 }}</view>
+										<view class="number" :class="{ zkq: item.coupon_type === '折扣券' }" v-if="item.coupon_type === '折扣券'">{{ item.discount }}</view>
+										<view class="number" v-if="item.coupon_type === '现金券'">{{ item.used_amount }}</view>
+										<view class="number" v-if="item.coupon_type === '代金券'">{{ item.used_amount }}</view>
 										<view class="units" v-if="item.coupon_type === '折扣券'">折</view>
 									</view>
 									<view class="validity">有效期至:{{ item.used_end_time ? item.used_end_time.slice(0, 10) : '' }}</view>
@@ -62,12 +73,9 @@
 									<view class="coupon-name">{{ item.coupon_name }}</view>
 									<!-- <view class="market-name">{{ item._merchant_no_disp }}</view> -->
 									<view class="coupon-rule">
-										<text v-if="item.coupon_type === '现金券'">直接抵扣现金</text>
-										<text v-if="item.coupon_type === '代金券'">满{{ item.consume_amount }}元立减</text>
-										<text v-if="item.coupon_type === '折扣券'">满{{ item.consume_amount ? item.consume_amount : 0 }}元可用</text>
+										<text>{{ item.coupon_explain }}</text>
 									</view>
 									<view
-										@click="drawCoupon(item)"
 										v-if="TabCur == 0"
 										class="coupon_button"
 										:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
@@ -75,7 +83,6 @@
 										点击领取
 									</view>
 									<view
-										@click="checkQrcode(item)"
 										v-else-if="TabCur == 1"
 										class="coupon_button"
 										:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
@@ -88,115 +95,25 @@
 							<view class="circle-top"></view>
 							<view class="circle-bottom"></view>
 						</view>
-						<!-- 	<view
-							class="row_coupon_top"
-							:class="{ 'efficacy-top': TabCur === 2, djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
-						>
-							<view class="row_coupon_top_t">{{ item.coupon_name }}</view>
-							<view class="row_coupon_top_b">
-								<view class="row_coupon_top_b_left">
-									<view class="coupon_money_w">
-										<view class="coupon_money" v-if="item.coupon_type === '折扣券'">
-											<text>{{ item.discount ? item.discount : 10 }}</text>
-											<text>折</text>
-										</view>
-										<view class="coupon_money" v-if="item.coupon_type !== '折扣券'">
-											<text>{{ item.used_amount }}</text>
-											<text>元</text>
-										</view>
-										<view class="coupon_sale">
-											<text v-if="item.coupon_type === '现金券'">直接抵扣现金</text>
-											<text v-if="item.coupon_type === '代金券'">满{{ item.consume_amount }}元立减</text>
-											<text v-if="item.coupon_type === '折扣券'">满{{ item.consume_amount ? item.consume_amount : 0 }}元可用</text>
-										</view>
-									</view>
-									<view class="coupon_money_bod"></view>
-								</view>
-								<view class="row_coupon_top_b_right">
-									<text>{{ item._merchant_no_disp && item._merchant_no_disp.split('/')[0] }}</text>
-									<text style=" width: 400rpx; text-align: center; display: inline-block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ item.coupon_remark }}</text>
-								</view>
-							</view>
-							<view v-if="TabCur != 2" class="coupon_flag">
-								<view class="coupon_flag_tri"></view>
-								<text>{{ diffDay(item.used_end_time.split(' ')[0]) }}天后到期</text>
-							</view>
-						</view> -->
-						<!-- <view class="row_coupon_bot" :class="TabCur == 1 ? 'sel-qrcode' : ''">
-							<view class="row_coupon_bot_left">
-								<view class="row_coupon_bot_l">
-									<view class="coupon_type" :class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }">
-										{{ item.coupon_type }}
-									</view>
-									<text>有效期至：</text>
-									<text>{{ item.used_end_time.split(' ')[0] }}</text>
-								</view>
-								<view
-									@click="drawCoupon(item)"
-									v-if="TabCur == 0"
-									class="row_coupon_bot_r"
-									:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
-								>
-									立即领取
-								</view>
-								<view
-									@click="checkQrcode(item)"
-									v-else-if="TabCur == 1"
-									class="row_coupon_bot_r"
-									:class="{ djq: item.coupon_type === '代金券', xjq: item.coupon_type === '现金券', zkq: item.coupon_type === '折扣券' }"
-								>
-									查看二维码
-								</view>
-								<view v-else-if="TabCur == 2" class="row_coupon_bot_r efficacy">已使用</view>
-							</view>
-
-							<view v-if="TabCur == 1" class="row_coupon_bot_l_b">
-								<text>使用说明：</text>
-								<text class="explain_text">{{ item.coupon_explain }}</text>
-							</view>
-						</view> -->
 					</view>
 				</view>
 			</view>
 			<u-popup v-model="coupon_show" mode="center" border-radius="25">
-				<view class="coupon_qrcod">
-					<view class="qrcode_top">智慧宝塔专享红包</view>
+				<view
+					class="coupon_qrcod"
+					:class="{
+						zkq: currentCoupon.coupon_type === '折扣券',
+						xjq: currentCoupon.coupon_type === '现金券',
+						djq: currentCoupon.coupon_type === '代金券'
+					}"
+				>
+					<view class="qrcode_top">智慧宝塔专享优惠</view>
 					<view class="qrcode_cen">{{ currentCoupon && currentCoupon._merchant_no_disp && currentCoupon._merchant_no_disp.split('/')[0] }}</view>
 					<view class="qrcode_img"><canvas canvas-id="qrcode" style="width: 200px;height: 200px;border: 1px solid #ccc;" /></view>
+					<view class="coupon_explain">{{ currentCoupon.coupon_explain }}</view>
 				</view>
 			</u-popup>
-			<!-- <view v-if="couponValidList.length > 0" class="coupon-list-main">
-				<view class="row">
-					<view v-for="(item, index) in couponValidList" class="carrier" :key="index" @click="handleClick(item)">
-						<view class="left">
-							<view class="title">{{ item.coupon_name }}</view>
-							<view class="term">
-								<view style="margin-bottom: 2px;" class="term_time">使用时间：{{ item.used_start_time }}</view>
-								<view class="term_time">过期时间：{{ item.used_end_time }}</view>
-							</view>
-							<view class="icon shixiao" :class="TabCur == 3 ? 'un-use' : ''">
-								<image class="lose" v-if="TabCur == 3" src="../../../static/img/lose.png" mode=""></image>
-								<image v-if="TabCur == 2" src="../../../static/img/use.png" mode=""></image>
-							</view>
-							<view class="gap-top"></view>
-							<view class="gap-bottom"></view>
-						</view>
-
-						<view class="right" :class="isLose ? 'is-lose' : isUse ? 'is-use' : ''">
-							<view class="ticket">
-								<view class="num">{{ item.used_amount }}</view>
-								<view class="unit">元</view>
-							</view>
-							<view v-if="item.coupon_type === '代金券'" class="criteria">满{{ item.consume_amount }}使用</view>
-							<view @click="toUse(item)" v-if="TabCur == 1" class="use">去使用</view>
-							<view v-if="TabCur == 2" class="use">已使用</view>
-							<view @click="drawCoupon(item)" v-if="TabCur == 0" class="use">领取</view>
-						</view>
-					</view>
-				</view>
-			</view> -->
 		</sPullScroll>
-		<!-- <view v-if="isShopOwner" class="public-button-box"><view @click="toScan" class="lg text-gray cuIcon-scan add-button"></view></view> -->
 	</view>
 </template>
 
@@ -355,14 +272,22 @@ export default {
 		// this.getCouponListNum();
 	},
 	methods: {
+		clickCoupon(e, index) {
+			if (index === 0) {
+				this.drawCoupon(e);
+			}
+			if (index === 1) {
+				this.checkQrcode(e);
+			}
+		},
 		onClear() {
 			this.onRefresh();
 		},
 		onSearch(e) {
-			if (e) {
-				console.log(this.keyword);
-				this.onRefresh();
-			}
+			// if (e) {
+			console.log(this.keyword);
+			this.onRefresh();
+			// }
 		},
 		openDrop(index) {
 			// 展开某个下来菜单时，先关闭原来的其他菜单的高亮
@@ -564,7 +489,6 @@ export default {
 					value: this.dropValue
 				});
 			}
-
 			// }
 			const req = {
 				serviceName: serviceName,
@@ -613,20 +537,6 @@ export default {
 			}
 			this.couponValidList = this.couponValidList.concat(res.data.data);
 		},
-		/* 查询商户信息**/
-		async getShopUserInfo() {
-			// const url = this.getServiceUrl('spocp', 'srvspocp_merchant_name_select', 'select');
-			// const req = {
-			// 	serviceName: 'srvspocp_merchant_name_select',
-			// 	colNames: ['*'],
-			// 	condition: [
-			// 		]
-			// };
-			// let res = await this.$http.post(url,req)
-			// if(res.data.data.length > 0){
-			// 	this.isShopOwner = true
-			// }
-		},
 		/* 领取优惠券**/
 		async drawCoupon(couponItem) {
 			const url = this.getServiceUrl('spocp', 'srvspocp_coupon_get', 'operate');
@@ -651,87 +561,18 @@ export default {
 				});
 				setTimeout(() => {
 					this.onRefresh();
-					// this.getCouponListNum()
 				}, 500);
 			} else {
 				uni.showToast({
 					title: res.data.resultMessage,
 					icon: 'none'
 				});
+				setTimeout(() => {
+					this.onRefresh();
+				}, 500);
 			}
 
 			console.log('领取优惠券', couponItem);
-		},
-		/*注入接口权限**/
-		getSignature(formData) {
-			let self = this;
-			let linkurl = window.location.href.split('#')[0];
-			let req = {
-				serviceName: 'srvwx_app_signature_select',
-				colNames: ['*'],
-				condition: [
-					{
-						colName: 'app_no',
-						ruleType: 'eq',
-						value: this.$api.appNo.wxh5
-					},
-					{
-						colName: 'page_url',
-						ruleType: 'eq',
-						value: linkurl
-					}
-				]
-			};
-			self.$http.post(self.$api.getSignature, req).then(res => {
-				if (res.data.state === 'SUCCESS') {
-					let resData = res.data.data[0];
-					console.log('getSignature', resData);
-					jweixin.config({
-						debug: false, // 调试阶段建议开启
-						appId: resData.appId, // APPID
-						timestamp: resData.timestamp, // 时间戳timestamp
-						nonceStr: resData.noncestr, // 随机数nonceStr
-						signature: resData.signature, // 签名signature
-						// 需要调用的方法接口
-						jsApiList: ['scanQRCode']
-					});
-					jweixin.ready(() => {});
-					jweixin.error(function(res) {
-						// alert(JSON.stringify(res));
-						console.log(res);
-					});
-				} else {
-				}
-			});
-		},
-		/* 调取微信扫码并返回扫码结果**/
-		toScan() {
-			console.log('0000000');
-			jweixin.ready(function() {
-				jweixin.checkJsApi({
-					jsApiList: ['scanQRCode'],
-					success: function(res) {
-						console.warn('---------------打开扫一扫---------------', res);
-						jweixin.scanQRCode({
-							needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
-							scanType: ['qrCode', 'barCode'], // 可以指定扫二维码还是一维码，默认二者都有
-							success: function(res) {
-								var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-								uni.navigateTo({
-									url: '/pages/specific/qrcodeDetail/qrcodeDetail?qrcodeInfo=' + result
-								});
-								console.log('扫描二维码结果====', result);
-							},
-							error(e) {
-								console.error(e);
-							}
-						});
-					},
-					error(e) {
-						console.error('checkJsApi失败', e);
-					}
-				});
-			});
 		},
 		onRefresh() {
 			this.pageInfo.pageNo = 1;
@@ -944,7 +785,7 @@ export default {
 						height: 100%;
 						width: 15rpx;
 						top: 0;
-						right:-6rpx;
+						right: -6rpx;
 						background-image: radial-gradient(10px circle at 8px 10px, #f1f1f1 8px, transparent 5px);
 						background-size: 10rpx 40rpx;
 					}
@@ -952,7 +793,7 @@ export default {
 				.coupon—main {
 					width: 100%;
 					min-height: 100px;
-					padding:10rpx 0 ;
+					padding: 10rpx 0;
 					position: relative;
 					border-top-left-radius: 10rpx;
 					border-bottom-left-radius: 10rpx;
@@ -987,7 +828,7 @@ export default {
 							color: #ff2b15;
 						}
 					}
-			
+
 					&.zkq {
 						// 折扣券
 						background-image: linear-gradient(150deg, #00cfff, #b94af7, #f438d9);
@@ -1008,18 +849,18 @@ export default {
 						text-align: center;
 						font-size: 20rpx;
 						background-image: linear-gradient(90deg, #fddd6d, #ffb82d);
-						.cuIcon-favorfill{
+						.cuIcon-favorfill {
 							color: #fff;
 						}
 					}
-					&.used{
-						background-image: linear-gradient(90deg, #a2a2a2 , #909090 80%);
+					&.used {
+						background-image: linear-gradient(90deg, #a2a2a2, #909090 80%);
 						box-shadow: none;
 						.coupon-band {
 							background-color: #f1f1f1;
 							background-image: none;
 							color: #999;
-							.cuIcon-favorfill{
+							.cuIcon-favorfill {
 								color: #999;
 							}
 						}
@@ -1027,16 +868,18 @@ export default {
 					.coupon-left {
 						display: flex;
 						width: 254rpx;
-						height: 100%;
+						// height: 100%;
 						align-items: center;
 						flex-direction: column;
 						.top {
 							width: 100%;
-							padding-left: 40rpx;
+							// padding-left: 40rpx;
 							display: flex;
 							flex: 1;
-							align-items: flex-end;
+							// align-items: flex-end;
+							align-items: center;
 							padding-bottom: 10rpx;
+							justify-content: center;
 							.units {
 								font-size: 20rpx;
 								height: 100rpx;
@@ -1052,17 +895,17 @@ export default {
 								justify-content: center;
 								align-items: center;
 								font-size: 100rpx;
-								min-width: 120rpx;
-								padding:0 10rpx;
-								&.zkq{
-									width: 100rpx;
+								min-width: 100rpx;
+								padding: 0 10rpx;
+								&.zkq {
+									// padding-left:50rpx;
 								}
 							}
 						}
 						.validity {
 							font-size: 20rpx;
 							width: 100%;
-							padding-bottom: 20rpx;
+							padding-bottom: 10rpx;
 							text-align: center;
 						}
 					}
@@ -1287,12 +1130,49 @@ export default {
 
 .coupon_qrcod {
 	width: 300px;
-	height: 300px;
+	min-height: 300px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	background-image: linear-gradient(180deg, #4a8ce6, #3c64d4);
 	color: white;
+	&.xjq {
+		// 现金券
+		background-image: linear-gradient(150deg, #ffb246, #fd543b);
+		box-shadow: -2px 0px 1px 1px #ffa865;
+		// box-shadow: 0 2px 4px rgba($color: #ffb246, $alpha: 0.5), 0 0 6px rgba($color: #fd543b, $alpha: 0.5);
+		.coupon-band {
+			color: #fd543b;
+		}
+	}
+	&.djq {
+		// 代金券
+		background-image: linear-gradient(150deg, #ff47b7, #fe2a14);
+		box-shadow: -2px 0px 2px 0px #ff47b7, -2px 0px 2px 0px #fe2a14;
+		// box-shadow: 0 2px 4px rgba($color: #ff47b7, $alpha: 0.5), 0 0 6px rgba($color: #ff47b7, $alpha: 0.5);
+		.coupon-band {
+			color: #ff2b15;
+		}
+	}
+
+	&.zkq {
+		// 折扣券
+		background-image: linear-gradient(150deg, #00cfff, #b94af7, #f438d9);
+		box-shadow: -2px 0px 2px 0px #00cfff, -2px 0px 2px 0px #b94af7, -2px 0px 2px 0px #f438d9;
+		// box-shadow: 0 2px 4px rgba($color: #00cfff, $alpha: 0.5), 0 0 6px rgba($color: #f438d9, $alpha: 0.5);
+		.coupon-band {
+			color: #a44cfb;
+		}
+	}
+	.coupon_explain {
+		max-height: 100rpx;
+		display: flex;
+		align-items: center;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+		padding-top: 10rpx;
+	}
 	.qrcode_top {
 		text-align: center;
 		padding: 10px 0;
@@ -1301,7 +1181,7 @@ export default {
 	.qrcode_cen {
 		text-align: center;
 		font-size: 18px;
-		margin-bottom: 15px;
+		margin-bottom: 10rpx;
 	}
 	.qrcode_img {
 		width: 200px;

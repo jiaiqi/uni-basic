@@ -2,7 +2,7 @@
 	<view class="reg-main">
 		<u-form :model="formModel" ref="uForm" label-width="200" :label-style="labelStyle">
 			<!-- <u-form-item label="压缩图片测试"><u-image width="200rpx" height="200rpx" :src="compressBaseString"></u-image></u-form-item> -->
-			<!-- 			<u-form-item label="证件照片" :required="true" prop="id_card_photo">
+			<u-form-item label="证件照片" :required="true" prop="id_card_photo">
 				<u-upload
 					:action="action"
 					:max-count="1"
@@ -18,7 +18,7 @@
 					:show-upload-list="true"
 					ref="uUpload"
 				></u-upload>
-			</u-form-item> -->
+			</u-form-item>
 			<u-form-item label="姓名" prop="name" :required="true"><u-input v-model="formModel.name" :placeholder="`请填写您的真实姓名`" /></u-form-item>
 			<u-form-item label="性别" :required="true" prop="sex">
 				<radio-group @change="radioChange">
@@ -30,7 +30,7 @@
 			</u-form-item>
 			<u-form-item label="出生日期" :required="true" prop="date_of_birth">
 				<u-input disabled :border="border" placeholder="请选择出生日期" v-model="formModel.date_of_birth" type="text" @click="showTimePicker = true"></u-input>
-				<u-picker default-time="1990-01-01" v-model="showTimePicker" mode="time" @confirm="confirmDate"></u-picker>
+				<u-picker start-year="1900" default-time="1990-01-01" v-model="showTimePicker" mode="time" @confirm="confirmDate"></u-picker>
 			</u-form-item>
 			<u-form-item label="地址" :required="true" prop="address"><u-input v-model="formModel.address" :placeholder="`请输入地址`" /></u-form-item>
 			<u-form-item label="证件号码" prop="id_card" :required="true"><u-input v-model="formModel.id_card" :placeholder="`请填写您真实的身份证号`" /></u-form-item>
@@ -143,7 +143,7 @@ export default {
 				address: [
 					{
 						required: true,
-						message: '请选择性别',
+						message: '请输入地址',
 						// 可以单个或者同时写两个触发验证方式
 						trigger: ['change', 'blur']
 					}
@@ -159,8 +159,8 @@ export default {
 						// 自定义验证函数
 						validator: (rule, value, callback) => {
 							// 返回true表示校验通过，返回false表示不通过
-							let reg =  /^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$/
-							return reg.test(value)
+							let reg = /^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$/;
+							return reg.test(value);
 						},
 						message: '请填写正确的身份证号',
 						// 触发器可以同时用blur和change
@@ -361,10 +361,10 @@ export default {
 		async toOCR(file_no) {
 			// ocr识别身份证信息
 			let self = this;
-			const reqUrl = self.getServiceUrl('daq', 'srvdaq_orc_idcard_extraction', 'operate');
+			const reqUrl = self.getServiceUrl('spocp', 'srvspocp_orc_idcard_extraction', 'operate');
 			const reqData = [
 				{
-					serviceName: 'srvdaq_orc_idcard_extraction',
+					serviceName: 'srvspocp_orc_idcard_extraction',
 					data: [
 						{
 							file_no: file_no
@@ -386,7 +386,6 @@ export default {
 			} else {
 				console.log(response.data.resultMessage);
 			}
-			// uni.hideLoading()
 		},
 		getOcrInfo(e) {
 			// 拿到ocr接口返回的数据
@@ -661,8 +660,8 @@ export default {
 	width: 100vw;
 	height: 100vh;
 	background-color: #fff;
-	background-color: #f4f6fa;
-	background-image: url(../../../static/img/regbg@2x.png);
+	// background-color: #f4f6fa;
+	// background-image: url(../../../static/img/regbg@2x.png);
 	background-position: bottom;
 	background-size: 100% 380rpx;
 	background-repeat: no-repeat;
