@@ -1,18 +1,33 @@
 <template>
 	<view class="qr-code-warp ">
 		<!-- <view class=" content"> -->
+		<view class="top-box"></view>
 		<view class="c-form">
-			<view class="c-form-item">
+			<view class="form-item name">
+				<text class="cuIcon-people icon"></text>
+				<view class="label">
+					姓名
+				</view>
+				<view class="value">{{ realNameInfo ? realNameInfo.name : '' }}</view>
+			</view>
+			<view class="form-item card">
+				<text class="cuIcon-card icon"></text>
+				<view class="label">
+					证件号码
+				</view>
+				<view class="value">{{ realNameInfo ? realNameInfo.id_card : '' }}</view>
+			</view>
+			<!-- <view class="c-form-item">
 				<view class="label">姓名</view>
 				<view class="value">{{ realNameInfo ? realNameInfo.name : '' }}</view>
 			</view>
 			<view class="c-form-item">
 				<view class="label">证件号码</view>
 				<view class="value">{{ realNameInfo ? realNameInfo.id_card : '' }}</view>
-			</view>
+			</view> -->
 		</view>
 		<view class="tip">
-			<view class="title"><view class="text">我的票据二维码</view></view>
+			<view class="title"><view class="text">我的二维码</view></view>
 			<view class="content-text">市民可通过电子身份二维码在全域景点进行扫码入场，无需携带卡片身份证</view>
 		</view>
 		<view class="qr-code-box">
@@ -28,8 +43,8 @@
 					makeOnLoad
 					@makeComplete="makeComplete"
 				></uni-qrcode>
-				
-				<img class="code_img" v-show="!isShow" :src="qrcodeSrc">
+
+				<img class="code_img" v-show="!isShow" :src="qrcodeSrc" />
 				<!-- <image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image> -->
 				<view class="tip-text" v-show="!isShow">
 					<view v-show="!iconIsShow" class="tgtit">
@@ -196,14 +211,39 @@ export default {
 	background-color: #eaf1fd;
 	// background-color: #e1eafa;
 	box-sizing: border-box;
-	padding: 20rpx;
+	background-image: url(../../../static/img/qrcode-bg1.png);
+	background-size: 100% 100%;
 	display: flex;
 	flex-direction: column;
+	padding: 0 20rpx;
+	.top-box {
+		// background-image: url(../../../static/img/top.png);
+		// background-size: cover;
+		height: 280rpx;
+	}
 	.c-form {
 		// margin: 50rpx;
 		font-size: 28rpx;
 		margin: 20rpx;
 		margin-bottom: 50rpx;
+		padding: 0 50rpx;
+		box-sizing: border-box;
+		// background-color: #f3f8fe;
+		.form-item {
+			height: 80rpx;
+			line-height: 80rpx;
+			border-bottom: 1rpx solid #cfcfcf;
+			display: flex;
+			align-items: center;
+			color: #666;
+			.label {
+				width: 150rpx;
+			}
+			.icon {
+				font-size: 48rpx;
+				margin-right: 20rpx;
+			}
+		}
 		.c-form-item {
 			color: #3677fe;
 			&:first-child {
@@ -216,10 +256,12 @@ export default {
 	}
 	.tip {
 		// min-height: 300rpx;
-		width: 100%;
+		width: calc(100% - 40rpx);
 		background-color: #fff;
 		border-radius: 20rpx;
 		padding: 30rpx 50rpx;
+		margin: 0 20rpx;
+
 		.title {
 			display: flex;
 			margin: 0;
@@ -242,16 +284,16 @@ export default {
 		.content-text {
 			color: #77818c;
 			line-height: 48rpx;
-			margin-top: 30rpx;
 		}
 	}
 	.qr-code-box {
 		display: flex;
 		justify-content: center;
-		margin-top: 80rpx;
+		margin-top: 30rpx;
+		text-align: center;
 		.code_img {
-			width: 200px;
-			height: 200px;
+			width: 180px;
+			height: 180px;
 			border: none;
 			margin: 0;
 			padding: 0;

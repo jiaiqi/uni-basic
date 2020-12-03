@@ -137,6 +137,10 @@ export default {
 					serviceName: 'srvwx_public_page_authorization'
 				}
 			];
+			// if (uni.getStorageSync('backUrl') === 'https://wap.lotsmall.cn/vue/custompage?id=12490&m_id=162') {
+			// 	// https://wap.lotsmall.cn/vue/custompage?id=12490&m_id=162
+			// 	req[0].data[0].redirect_uri = uni.getStorageSync('backUrl');
+			// }
 			this.$http.post(url, req).then(response => {
 				if (response.data.response[0].response.authUrl) {
 					console.log('成功获取回调地址,', response.data.response);

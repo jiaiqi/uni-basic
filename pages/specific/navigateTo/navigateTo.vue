@@ -6,6 +6,11 @@
 export default {
 	onLoad(option) {
 		this.selectRealNameInfo().then(res => {
+			if (!option.url) {
+				uni.setStorageSync('backUrl', 'https://wap.lotsmall.cn/vue/custompage?id=12490&m_id=162');
+			} else {
+				uni.setStorageSync('backUrl', option.url);
+			}
 			if (res) {
 				if (!option.url || (option.url && option.url.indexOf('/pages/') === -1 && option.url.indexOf('/navigateTo/') === -1)) {
 					// #ifdef H5
@@ -22,8 +27,6 @@ export default {
 						complete() {}
 					});
 				}
-			} else {
-				uni.setStorageSync('backUrl', option.url);
 			}
 		});
 	}

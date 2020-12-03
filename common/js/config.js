@@ -1,5 +1,5 @@
 import http from './http.js'
-let env = 'production' // develop-开发环境  production-生产环境
+let env = 'develop' // develop-开发环境  production-生产环境
 const config = {
 	host: {
 		// backUrl: "https://ymtsrv.yiyuanhealth.com", //后端接口地址
@@ -42,11 +42,15 @@ const config = {
 	},
 }
 if (env === 'develop') {
+	// 生产环境
 	config.frontEndAddress = "https://wx2.100xsys.cn/ymt/"
 	config.serviceAddress = "https://srvms.100xsys.cn"
+	config.appNo.wxh5 = 'APPNO20200107181133'
 } else {
+	// 开发环境
 	config.frontEndAddress = "https://app.shuzibaota.com/ymt/"
 	config.serviceAddress = 'https://wap.shuzibaota.com'
+	config.appNo.wxh5 = 'APPNO20200820082740'
 }
 const api = {
 	srvHost: config.serviceAddress,
