@@ -12,7 +12,8 @@ fly.interceptors.request.use((request) => {
 	// 如果是浏览器运行的记录 请求的页面path和参数
 	if (request.url.indexOf('srvdaq_orc_idcard_extraction') !== -1 || request.url.indexOf(
 			'srvsso_matching_image_code_check') !== -1 || request.url.indexOf('srvsso_matching_send_node') !== -1 || request.url
-		.indexOf('srvsso_matching_image_code') !== -1 || request.url.indexOf('srvspocp_user_reserve_record_select') !== -1) {
+		.indexOf('srvsso_matching_image_code') !== -1 || request.url.indexOf('srvspocp_user_reserve_record_select') !== -1 ||
+		request.url.indexOf('srvspocp_qr_code_create') !== -1) {
 		// uni.showLoading({
 		// 	mask: true,
 		// 	title:'正在识别'

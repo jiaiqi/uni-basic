@@ -5,16 +5,12 @@
 		<view class="c-form">
 			<view class="form-item name">
 				<text class="cuIcon-people icon"></text>
-				<view class="label">
-					姓名
-				</view>
+				<view class="label">姓名</view>
 				<view class="value">{{ realNameInfo ? realNameInfo.name : '' }}</view>
 			</view>
 			<view class="form-item card">
 				<text class="cuIcon-card icon"></text>
-				<view class="label">
-					证件号码
-				</view>
+				<view class="label">证件号码</view>
 				<view class="value">{{ realNameInfo ? realNameInfo.id_card : '' }}</view>
 			</view>
 			<!-- <view class="c-form-item">
@@ -31,8 +27,9 @@
 			<view class="content-text">市民可通过电子身份二维码在全域景点进行扫码入场，无需携带卡片身份证</view>
 		</view>
 		<view class="qr-code-box">
-			<view>
+			<view @click="refreshCode">
 				<uni-qrcode
+					class="qrcode-component"
 					v-if="qrCodeData"
 					style="opacity: 0;"
 					v-show="isShow"
@@ -43,10 +40,10 @@
 					makeOnLoad
 					@makeComplete="makeComplete"
 				></uni-qrcode>
-
-				<img class="code_img" v-show="!isShow" :src="qrcodeSrc" />
+				<img class="code_img" :src="qrcodeSrc" />
 				<!-- <image class="code_img" v-show="!isShow" :src="qrcodeSrc"></image> -->
-				<view class="tip-text" v-show="!isShow">
+				<view class="tip-text">
+				<!-- <view class="tip-text" v-show="!isShow"> -->
 					<view v-show="!iconIsShow" class="tgtit">
 						<text class="left-text margin-right-xs">更新于{{ refreshTime }}</text>
 						<text @click="refreshCode" class="lg text-blue cuIcon-refresh right_text"></text>
@@ -86,6 +83,7 @@
 			<view class="sharbuttn">
 			</view>
 		</view> -->
+		<view class="bg-box"></view>
 	</view>
 </template>
 
@@ -101,7 +99,7 @@ export default {
 			providerList: [],
 			sourceLink: 'http://yunzhujiao.cn/bind_pub/index.html',
 			type: 0,
-			qrcodeSrc: '',
+			qrcodeSrc: require('static/qrcode.png'),
 			size: 250,
 			logo: '/static/img/tower.jpg',
 			// logo: '/static/logo.png',
@@ -211,21 +209,32 @@ export default {
 	background-color: #eaf1fd;
 	// background-color: #e1eafa;
 	box-sizing: border-box;
-	background-image: url(../../../static/img/qrcode-bg1.png);
+	// background-image: url(../../../static/img/qrcode-xd.png);
 	background-size: 100% 100%;
 	display: flex;
 	flex-direction: column;
 	padding: 0 20rpx;
+	position: relative;
+	.bg-box {
+		width: 100%;
+		height: 100vh;
+		background-image: url(../../../static/img/qrcode-xd-bg1.png);
+		background-size: 100vw 100vh;
+		position: absolute;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+	}
 	.top-box {
 		// background-image: url(../../../static/img/top.png);
 		// background-size: cover;
-		height: 280rpx;
+		height: 200rpx;
 	}
 	.c-form {
 		// margin: 50rpx;
 		font-size: 28rpx;
 		margin: 20rpx;
-		margin-bottom: 50rpx;
+		margin-bottom: 40rpx;
 		padding: 0 50rpx;
 		box-sizing: border-box;
 		// background-color: #f3f8fe;
@@ -259,16 +268,17 @@ export default {
 		width: calc(100% - 40rpx);
 		background-color: #fff;
 		border-radius: 20rpx;
-		padding: 30rpx 50rpx;
+		padding: 10rpx 50rpx 30rpx;
 		margin: 0 20rpx;
-
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
 		.title {
 			display: flex;
 			margin: 0;
 			padding: 0;
 			color: #333;
 			font-size: 32rpx;
-			text-indent: 20px;
+			text-indent: 30rpx;
 			line-height: 60rpx;
 			position: relative;
 			&::before {
@@ -278,29 +288,41 @@ export default {
 				height: 28rpx;
 				top: 14rpx;
 				width: 5px;
+				border-radius: 20rpx;
 				background-color: #3677fe;
 			}
 		}
 		.content-text {
 			color: #77818c;
-			line-height: 48rpx;
+			line-height: 30rpx;
+			font-size: 24rpx;
 		}
 	}
 	.qr-code-box {
+		position: relative;
+		.qrcode-component {
+			position: absolute;
+			top: -99999999;
+		}
 		display: flex;
 		justify-content: center;
-		margin-top: 30rpx;
+		// margin-top: 30rpx;
+		margin: 0 20rpx;
+		background-color: #f3f8fe;
+		padding-top: 30rpx;
 		text-align: center;
+		padding-bottom: calc(100vh - 1200rpx);
 		.code_img {
-			width: 180px;
-			height: 180px;
+			width: 250px;
+			height: 250px;
 			border: none;
 			margin: 0;
 			padding: 0;
 		}
 		.tip-text {
+			font-size: 24rpx;
+			color: #999;
 			.left-text {
-				font-size: 26rpx;
 			}
 		}
 	}
